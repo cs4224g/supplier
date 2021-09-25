@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.warehouse (
 	W_ZIP VARCHAR,
 	W_TAX DECIMAL,
 	W_YTD DECIMAL,
-      PRIMARY KEY (W_ID)
+    PRIMARY KEY (W_ID)
 );
 
 CREATE TABLE IF NOT EXISTS wholesale_supplier.district (
