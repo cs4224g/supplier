@@ -4,6 +4,7 @@ from cassandra.query import named_tuple_factory, BatchStatement, SimpleStatement
 
 from cassandra.cluster import Cluster
 
+from transactions.t2 import execute_t2
 from transactions.t4 import execute_t4
 # from transactions.t5 import execute_t5
 
@@ -21,6 +22,8 @@ if __name__ == '__main__':
         # TODO: Add respective if statements for other Xact types
         if (xact == 'O'):
             execute_t4(session, line)
+        elif(xact == 'P'):
+            execute_t2(session, input_arr)
         # elif (xact == 'S'):
         #     execute_t5(session, line)
 
