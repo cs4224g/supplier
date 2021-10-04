@@ -90,6 +90,34 @@ def execute_t2(session, args_arr):
                               ret_customer.c_ytd_payment + float(payment),
                               ret_customer.c_zip))
         
+        # c_balance is duplicated in top_balance
+        # share: v janky querying/deletion from top_balance bc need current c_balance exactly. risk duplicate records.
+        # change PK from PRIMARY KEY((C_W_ID, C_D_ID), C_BALANCE, C_ID) to PRIMARY KEY((C_W_ID, C_D_ID), C_ID, C_BALANCE)? 
+        # then can handle duplicates in app
+        session.execute(SimpleStatement(f"""DELETE FROM top_balance WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_balance={ret_customer.c_balance} and c_id={c_id};"""))
+        session.execute(f"""
+        INSERT INTO top_balance (c_w_id,
+                                 c_d_id,
+                                 c_balance,
+                                 c_id,
+                                 c_d_name,
+                                 c_first,
+                                 c_last,
+                                 c_middle,
+                                 c_w_name) 
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
+                            (ret_customer.c_w_id, 
+                              ret_customer.c_d_id, 
+                              ret_customer.c_balance - payment, 
+                              ret_customer.c_id, 
+                              ret_customer.c_d_name, 
+                              ret_customer.c_first,
+                              ret_customer.c_last,
+                              ret_customer.c_middle,
+                              ret_customer.c_w_name))
+
+
+
         # print required info
         print('--------------------')
         # ret_customer is before the update. 
