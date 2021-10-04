@@ -78,31 +78,6 @@ def perform_transaction(session):
                 if match_customer:
                     result.add((w_id_2, d_id_2, c_id_2))
 
-        
-                
-    
-    # for potential_match in potential_matches:
-    #     o_id, m = potential_match
-    #     items_o_1 = set(order_items_dict[o_id])
-
-    #     w_id_2 = order_item.ol_w_id
-    #     d_id_2 = order_item.ol_d_id
-    #     o_id_2 = order_item.ol_o_id
-    #     c_id_2 = order_item.ol_c_id
-    
-
-    #     query_items_o_2 = SimpleStatement(
-    #         f'SELECT OL_I_ID \
-    #             FROM wholesale_supplier.order_line \
-    #             WHERE OL_W_ID={w_id_2}, OL_D_ID={d_id_2}, OL_O_ID={o_id_2}'
-    #     )
-    #     res_items_o_2 = session.execute(query_items_o_2)
-    #     items_o_2 = set()
-    #     for item in res_items_o_2:
-    #         items_o_2.add(item.ol_i_id)
-    #     if len(items_o_1.intersection(items_o_2) > 1):
-    #         result.add((w_id_2, d_id_2, c_id_2))
-
     for r in result:
         w_id_result, d_id_result, c_id_result = r
         print(f'{w_id_result} {d_id_result} {c_id_result}')
