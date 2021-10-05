@@ -2,7 +2,7 @@ from cassandra.query import named_tuple_factory, SimpleStatement
 
 def process_input(user_input):
     # input_arr = sys.stdin.readline().split(",")
-    input_arr = user_input.split(",")
+    input_arr = user_input.strip().split(",")
     global w_id
     w_id = input_arr[1]
     global d_id
