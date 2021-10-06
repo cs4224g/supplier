@@ -17,6 +17,7 @@ if __name__ == '__main__':
     session.row_factory = named_tuple_factory
 
     for line in sys.stdin:
+        # careful, the last argument will have \n. Affects string comparisons.
         input_arr = line.split(",")
         xact = input_arr[0]
         # TODO: Add respective if statements for other Xact types
@@ -24,6 +25,8 @@ if __name__ == '__main__':
             execute_t4(session, line)
         elif(xact == 'P'):
             execute_t2(session, input_arr)
+        elif(xact == 'D'):
+            execute_t3(session, input_arr)
         # elif (xact == 'S'):
         #     execute_t5(session, line)
 
