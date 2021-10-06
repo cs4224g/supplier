@@ -36,7 +36,6 @@ def execute_t2(session, args_arr):
         upd_district = SimpleStatement(f"""UPDATE district SET d_ytd={ret_district.d_ytd + payment} 
                                         WHERE d_w_id={c_w_id} AND d_id={c_d_id};""")
         session.execute(upd_district)
-        # c_balance is duplicated in top_balance
         # highlight: C_YTD_PAYMENT is float, while most other $ cols are decimals
         # highlight: c_balance is part of PK For customer. cannot update. Must drop and reinsert. performance?
         session.execute(SimpleStatement(f"""DELETE FROM customer WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};"""))
@@ -131,60 +130,5 @@ def execute_t2(session, args_arr):
         print(payment)
 
 
-        # print(f"""
-        # INSERT INTO customer (c_w_id, 
-        #                       c_d_id, 
-        #                       c_id, 
-        #                       c_balance, 
-        #                       c_city, 
-        #                       c_credit, 
-        #                       c_credit_lim, 
-        #                       c_d_name, 
-        #                       c_data, 
-        #                       c_delivery_cnt,
-        #                       c_discount,
-        #                       c_first,
-        #                       c_last,
-        #                       c_middle,
-        #                       c_payment_cnt,
-        #                       c_phone,
-        #                       c_since,
-        #                       c_state,
-        #                       c_street_1,
-        #                       c_street_2,
-        #                       c_w_name,
-        #                       c_ytd_payment,
-        #                       c_zip) 
-        #               VALUES ({ret_customer.c_w_id}, 
-        #                       {ret_customer.c_d_id}, 
-        #                       {ret_customer.c_id}, 
-        #                       {ret_customer.c_balance - payment}, 
-        #                       '{ret_customer.c_city}', 
-        #                       '{ret_customer.c_credit}', 
-        #                       {ret_customer.c_credit_lim}, 
-        #                       '{ret_customer.c_d_name}', 
-        #                       '{ret_customer.c_data}', 
-        #                       {ret_customer.c_delivery_cnt},
-        #                       {ret_customer.c_discount},
-        #                       '{ret_customer.c_first}',
-        #                       '{ret_customer.c_last}',
-        #                       '{ret_customer.c_middle}',
-        #                       {ret_customer.c_payment_cnt + 1},
-        #                       '{ret_customer.c_phone}',
-        #                       {ret_customer.c_since},
-        #                       '{ret_customer.c_state}',
-        #                       '{ret_customer.c_street_1}',
-        #                       '{ret_customer.c_street_2}',
-        #                       '{ret_customer.c_w_name}',
-        #                       {ret_customer.c_ytd_payment + float(payment)},
-        #                       '{ret_customer.c_zip}');
-        # """)#)
-
-        # upd_customer = SimpleStatement(f"""UPDATE customer SET 
-        #                                     c_balance={ret_customer.c_balance - payment},
-        #                                     c_ytd_payment={ret_customer.c_ytd_payment + float(payment)},
-        #                                     c_payment_cnt={ret_customer.c_payment_cnt + 1}
-        #                                 WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};""")
-        # session.execute(upd_customer)
 
 
