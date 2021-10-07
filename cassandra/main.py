@@ -1,4 +1,4 @@
-import sys
+import sys, time
 
 from cassandra.query import named_tuple_factory, BatchStatement, SimpleStatement
 
@@ -8,6 +8,7 @@ from transactions.t1 import execute_t1
 from transactions.t2 import execute_t2
 from transactions.t3 import execute_t3
 from transactions.t4 import execute_t4
+from transactions.t8 import execute_t8
 # from transactions.t5 import execute_t5
 
 
@@ -22,9 +23,12 @@ if __name__ == '__main__':
         # careful, the last argument will have \n. Affects string comparisons.
         input_arr = line.split(",") 
         xact = input_arr[0]
+        start_time = time.time()
         # TODO: Add respective if statements for other Xact types
         if (xact == 'O'):
             execute_t4(session, line)
+        elif (xact == 'R'):
+            execute_t8(session, line)
         elif(xact == 'P'):
             execute_t2(session, input_arr)
         elif(xact == 'D'):
@@ -36,6 +40,6 @@ if __name__ == '__main__':
         # elif (xact == 'S'):
         #     execute_t5(session, line)
 
-
+        print(f'Time taken: {time.time() - start_time}')
 
     cluster.shutdown()

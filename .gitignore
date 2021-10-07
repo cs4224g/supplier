@@ -133,3 +133,7 @@ cassandra/csvs/*
 cassandra/*.in
 cassandra/*.out
 cassandra/*.scraps
+
+# cassandra error log
+*.err
+
