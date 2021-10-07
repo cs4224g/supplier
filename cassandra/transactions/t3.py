@@ -163,7 +163,7 @@ def execute_t3(session, args_arr):
         (w_id, d_id, order.o_c_id, order.o_id))[0]
       print(order_status_before)
 
-      assert order_status_before.o_carrier_id == -1, f"Inconsistency detected? Trying to update null order_status carrier_id but it's already non-null"
+      assert order_status_before.o_carrier_id == -1, f"Inconsistency detected? Trying to update null order_status carrier_id but it's already non-null" # ask
 
 
       session.execute(f"""
