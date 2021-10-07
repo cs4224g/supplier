@@ -8,8 +8,10 @@ from transactions.t1 import execute_t1
 from transactions.t2 import execute_t2
 from transactions.t3 import execute_t3
 from transactions.t4 import execute_t4
+from transactions.t5 import execute_t5
+from transactions.t6 import execute_t6
+from transactions.t7 import execute_t7
 from transactions.t8 import execute_t8
-# from transactions.t5 import execute_t5
 
 
 if __name__ == '__main__':
@@ -20,25 +22,31 @@ if __name__ == '__main__':
     session.row_factory = named_tuple_factory
 
     for line in sys.stdin:
-        # careful, the last argument will have \n. Affects string comparisons.
-        input_arr = line.split(",") 
-        xact = input_arr[0]
+        input_arr = line.split(",")
+        xact = input_arr[0].strip()
+
         start_time = time.time()
-        # TODO: Add respective if statements for other Xact types
-        if (xact == 'O'):
-            execute_t4(session, line)
-        elif (xact == 'R'):
-            execute_t8(session, line)
+        
+        if(xact == 'N'):
+            execute_t1(session, input_arr)
         elif(xact == 'P'):
             execute_t2(session, input_arr)
         elif(xact == 'D'):
             execute_t3(session, input_arr)
-        elif(xact == 'N'):
-            execute_t1(session, input_arr)
+        elif (xact == 'O'):
+            execute_t4(session, line)
+        elif (xact == 'S'):
+            execute_t5(session, line)
+        elif (xact == 'I'):
+            execute_t6(session, line)
+        elif (xact == 'T'):
+            execute_t7(session)
+        elif (xact == 'R'):
+            execute_t8(session, line)
+
         else:
             print('fall thru', xact)
-        # elif (xact == 'S'):
-        #     execute_t5(session, line)
+
 
         print(f'Time taken: {time.time() - start_time}')
 

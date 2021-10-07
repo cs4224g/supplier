@@ -130,11 +130,11 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.stock (
 	S_DIST_09 VARCHAR,
 	S_DIST_10 VARCHAR,
 	S_DATA VARCHAR,
-	PRIMARY KEY (S_W_ID, S_I_ID)
-);
+	PRIMARY KEY((S_W_ID, S_I_ID), S_QUANTITY)
+) WITH CLUSTERING ORDER BY (S_QUANTITY DESC);
 
 -- Extra tables
--- For T6
+-- For T7
 CREATE TABLE IF NOT EXISTS wholesale_supplier.top_balance (
 	C_W_ID INT,
 	C_D_ID INT,
@@ -167,7 +167,6 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_status (
 ) WITH CLUSTERING ORDER BY (O_C_ID ASC, O_ID DESC);
 
 
-
 -- For T8
 CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_customer (
 	OL_W_ID INT,
@@ -190,6 +189,15 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_warehouse_item (
     -- extra
 	OL_C_ID INT,
 	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_C_ID, OL_O_ID, OL_NUMBER)
+);
+
+-- For T6
+CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
+	OL_I_ID INT,
+	OL_W_ID INT,
+	OL_D_ID INT,
+	OL_O_ID INT,
+	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID)
 );
 
 -- For T8
