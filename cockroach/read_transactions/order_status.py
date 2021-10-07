@@ -16,8 +16,9 @@ class order_status():
                         WHERE c_w_id = %s AND c_d_id = %s AND c_id = %s", 
                         (c_w_id, c_d_id, c_id))
 
-            for record in cur:
-                print(record)
+            # for record in cur:
+            #     print(record)
+            print(cur.fetchone)
 
             #output customer last order information
             cur.execute("SELECT o_id, o_entry_d, o_carrier_id \

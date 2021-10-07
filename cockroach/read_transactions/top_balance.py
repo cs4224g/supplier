@@ -3,8 +3,7 @@
 class top_balance():
 
     def execute(self, connection):
-        #connection = psycopg2.connect(opt.dsn)
-        #print('connected succesfully')
+
         print('\n================ executing top_balance query ================\n')
 
         results = ''
@@ -15,6 +14,7 @@ class top_balance():
                         ORDER BY c_balance DESC LIMIT 10;"
                         )
             results = cur.fetchall()
+        
         print('data retrieved, printing...')
         
         #TODO: format output
@@ -22,5 +22,6 @@ class top_balance():
             print(record)
 
 
+#format: space separated with new line for each output
 
 
