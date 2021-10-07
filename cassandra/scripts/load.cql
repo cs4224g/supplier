@@ -7,3 +7,4 @@ COPY wholesale_supplier.order_line FROM 'order_line_cass.csv' WITH DELIMITER=','
 COPY wholesale_supplier.stock FROM 'stock_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.top_balance FROM 'top_balance_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.order_status FROM 'order_status_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
+COPY wholesale_supplier.order_line_by_item FROM 'order_line_by_item_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
