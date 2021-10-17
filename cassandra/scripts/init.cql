@@ -1,6 +1,5 @@
 CREATE KEYSPACE IF NOT EXISTS wholesale_supplier
-WITH replication = {'class':'NetworkTopologyStrategy', 'replication_factor' : 1}; 
--- TODO will need to change to replication factor 3
+WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3}; 
 
 CREATE TABLE IF NOT EXISTS wholesale_supplier.warehouse (
 	W_ID INT,
@@ -181,25 +180,17 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_customer (
 	PRIMARY KEY ((OL_W_ID), OL_D_ID, OL_C_ID, OL_O_ID, OL_I_ID, OL_NUMBER)
 );
 
--- For T8
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_warehouse_item (
+
+-- For T6/T8
+CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
 	OL_W_ID INT,
 	OL_D_ID INT,
 	OL_O_ID INT,
 	OL_NUMBER INT,
 	OL_I_ID INT,
-    -- extra
-	OL_C_ID INT,
-	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_C_ID, OL_O_ID, OL_NUMBER)
-);
-
--- For T6
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
-	OL_I_ID INT,
-	OL_W_ID INT,
-	OL_D_ID INT,
-	OL_O_ID INT,
-	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID)
+	-- extra
+	OL_C_ID INT, 
+	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)
 );
 
 -- For T8

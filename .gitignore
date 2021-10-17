@@ -130,3 +130,6 @@ dmypy.json
 
 # cassandra error log
 *.err
+
+# data files
+*.csv
