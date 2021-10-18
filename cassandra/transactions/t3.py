@@ -28,7 +28,10 @@ def execute_t3(session, args_arr):
       order = session.execute(f"""
         SELECT * FROM order_by_carrier_id WHERE o_w_id=%s and o_d_id=%s and o_carrier_id=%s LIMIT 1;""",
         (w_id, d_id, -1))[0]
-      assert order, f"No null carrier_id exists for w={w_id}, d={d_id}. Is this a problem or can silently skip?"  # ask
+      # assert order, f"No null carrier_id exists for w={w_id}, d={d_id}. Is this a problem or can silently skip?"  # ask
+      if not order:
+        print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
+        continue
       print(order)
 
       ##### update carrier_id in order_by_carrier_id, which is a PK col
