@@ -36,10 +36,10 @@ def execute_t2(session, args_arr):
         upd_district = SimpleStatement(f"""UPDATE district SET d_ytd={ret_district.d_ytd + payment} 
                                         WHERE d_w_id={c_w_id} AND d_id={c_d_id};""")
         session.execute(upd_district)
-        # highlight: C_YTD_PAYMENT is float, while most other $ cols are decimals
-        # highlight: c_balance is part of PK For customer. cannot update. Must drop and reinsert. performance?
-        session.execute(SimpleStatement(f"""DELETE FROM customer WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};"""))
-        # share: don't use the literal quoting below. doesn't escape timestamps properly, need manually quote strings. it sucks
+
+        session.execute(SimpleStatement(f"""DELETE FROM customer 
+                                            WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};"""))
+        # literal quoting below; doesn't escape timestamps properly
         session.execute(f"""
         INSERT INTO customer (c_w_id, 
                               c_d_id, 
@@ -90,20 +90,24 @@ def execute_t2(session, args_arr):
                               ret_customer.c_zip))
         
         # c_balance is duplicated in top_balance
-        # share: v janky querying/deletion from top_balance bc need current c_balance exactly. risk duplicate records.
-        # change PK from PRIMARY KEY((C_W_ID, C_D_ID), C_BALANCE, C_ID) to PRIMARY KEY((C_W_ID, C_D_ID), C_ID, C_BALANCE)? 
-        # then can handle duplicates in app
-        session.execute(SimpleStatement(f"""DELETE FROM top_balance WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_balance={ret_customer.c_balance} and c_id={c_id};"""))
+        # c_balance is PK col in top_balance table, need to delete and reinsert updated row
+        session.execute(SimpleStatement(f"""
+          DELETE FROM top_balance 
+          WHERE c_w_id={c_w_id} 
+          and c_d_id={c_d_id} 
+          and c_balance={ret_customer.c_balance} 
+          and c_id={c_id};"""))
+        
         session.execute(f"""
-        INSERT INTO top_balance (c_w_id,
-                                 c_d_id,
-                                 c_balance,
-                                 c_id,
-                                 c_d_name,
-                                 c_first,
-                                 c_last,
-                                 c_middle,
-                                 c_w_name) 
+          INSERT INTO top_balance (c_w_id,
+                                   c_d_id,
+                                   c_balance,
+                                   c_id,
+                                   c_d_name,
+                                   c_first,
+                                   c_last,
+                                   c_middle,
+                                   c_w_name) 
                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
                             (ret_customer.c_w_id, 
                               ret_customer.c_d_id, 
@@ -115,16 +119,13 @@ def execute_t2(session, args_arr):
                               ret_customer.c_middle,
                               ret_customer.c_w_name))
 
-
-
-        # print required info
+        # print required info; printing updated values
         print('--------------------')
         # ret_customer is before the update. 
-        # probs have to print the updated info query again or nah?
         print(ret_customer.c_w_id, ret_customer.c_d_id, ret_customer.c_id, ret_customer.c_first, 
             ret_customer.c_middle, ret_customer.c_last, ret_customer.c_street_1, ret_customer.c_street_2, ret_customer.c_city, 
             ret_customer.c_state, ret_customer.c_zip, ret_customer.c_phone, ret_customer.c_since, ret_customer.c_credit, 
-            ret_customer.c_credit_lim, ret_customer.c_discount, ret_customer.c_balance)
+            ret_customer.c_credit_lim, ret_customer.c_discount, ret_customer.c_balance - payment)
         print(ret_warehouse.w_street_1, ret_warehouse.w_street_2, ret_warehouse.w_city, ret_warehouse.w_state, ret_warehouse.w_zip)
         print(ret_district.d_street_1, ret_district.d_street_2, ret_district.d_city, ret_district.d_state, ret_district.d_zip)
         print(payment)
