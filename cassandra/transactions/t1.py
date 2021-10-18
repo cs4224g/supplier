@@ -43,8 +43,39 @@ def execute_t1(session, args_arr):
   customer = customers[0]
 
   is_all_local = len(list(filter(lambda tw: tw != w_id, [t[1] for t in items]))) == 0
+
+  ### create new order in both order tables
+  # strictly speaking, since they are not executed in batch, the O_ENTRY_D = toTimestamp(Now())
+  # will differ slightly for the 2 orders, but there don't seem to be any queries sensitive to 
+  # that timestamp, so leaving it as un-batched.
   session.execute(
   """INSERT INTO orders (
+                      o_w_id,
+                      o_d_id,
+                      o_carrier_id,
+                      o_id,
+                      o_c_id,
+                      o_all_local,
+                      o_c_first,
+                      o_c_last,
+                      o_c_middle,
+                      o_entry_d,
+                      o_ol_cnt) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, toTimestamp(Now()), %s);""", 
+                      (
+                      w_id,
+                      d_id,
+                      -1,
+                      next_o_id,
+                      c_id,
+                      (1 if is_all_local else 0),
+                      customer.c_first,
+                      customer.c_last,
+                      customer.c_middle,
+                      num_items
+                      ))
+  session.execute(
+  """INSERT INTO order_by_carrier_id (
                       o_w_id,
                       o_d_id,
                       o_carrier_id,
@@ -86,22 +117,71 @@ def execute_t1(session, args_arr):
     if adj_qty < 10:
       adj_qty += 100
     remaining_qtys.append(adj_qty)
+    # with addition of S_QUANTITY to PK of stock, must delete and reinsert to update
     session.execute(f"""
-    UPDATE stock SET 
-      s_quantity=%s, 
-      s_ytd=%s,
-      s_order_cnt=%s,
-      s_remote_cnt=%s
-    WHERE s_w_id=%s
-      AND s_i_id=%s;""",
-    (
-      adj_qty, 
-      stock.s_ytd + ol_quantity,
-      stock.s_order_cnt + 1,
-      stock.s_remote_cnt + (1 if ol_supply_w_id != w_id else 0),
-      ol_supply_w_id,
-      ol_i_id
-    ))
+      DELETE from stock 
+      WHERE s_w_id=%s
+      AND s_i_id=%s
+      AND s_quantity=%s;
+    """, (ol_supply_w_id, ol_i_id, stock.s_quantity))
+
+    session.execute("""
+      INSERT INTO stock (
+        S_W_ID,
+        S_I_ID,
+        S_QUANTITY,
+        S_YTD,
+        S_ORDER_CNT,
+        S_REMOTE_CNT,
+        S_DIST_01,
+        S_DIST_02,
+        S_DIST_03,
+        S_DIST_04,
+        S_DIST_05,
+        S_DIST_06,
+        S_DIST_07,
+        S_DIST_08,
+        S_DIST_09,
+        S_DIST_10,
+        S_DATA
+      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""", 
+      (
+        stock.s_w_id,
+        stock.s_i_id,
+        adj_qty,
+        stock.s_ytd + ol_quantity,
+        stock.s_order_cnt + 1,
+        stock.s_remote_cnt + (1 if ol_supply_w_id != w_id else 0),
+        stock.s_dist_01,
+        stock.s_dist_02,
+        stock.s_dist_03,
+        stock.s_dist_04,
+        stock.s_dist_05,
+        stock.s_dist_06,
+        stock.s_dist_07,
+        stock.s_dist_08,
+        stock.s_dist_09,
+        stock.s_dist_10,
+        stock.s_data
+      ))
+    # session.execute(f"""
+    # UPDATE stock SET 
+    #   s_quantity=%s, 
+    #   s_ytd=%s,
+    #   s_order_cnt=%s,
+    #   s_remote_cnt=%s
+    # WHERE s_w_id=%s
+    #   AND s_i_id=%s
+    #   AND s_quantity=%s;""", 
+    # (
+    #   adj_qty, 
+    #   stock.s_ytd + ol_quantity,
+    #   stock.s_order_cnt + 1,
+    #   stock.s_remote_cnt + (1 if ol_supply_w_id != w_id else 0),
+    #   ol_supply_w_id,
+    #   ol_i_id,
+    #   stock.s_quantity
+    # ))
 
     item_infos = session.execute(f"""SELECT * FROM item WHERE i_id={ol_i_id}""")
     item_info = item_infos[0]
@@ -146,7 +226,60 @@ def execute_t1(session, args_arr):
           item_info.i_price,
           c_id
         ))
-     
+    
+    # Create new order_line in 3 duplicate order_line tables too.
+    session.execute("""
+      INSERT INTO order_line_by_customer (
+        OL_W_ID,
+        OL_D_ID,
+        OL_O_ID,
+        OL_NUMBER,
+        OL_I_ID,
+        OL_C_ID
+      ) VALUES (%s, %s, %s, %s, %s, %s);""",
+      (
+        w_id,
+        d_id,
+        next_o_id,
+        i+1, #1-based indexing
+        ol_i_id,
+        c_id
+      ))
+    session.execute("""
+      INSERT INTO order_line_by_item (
+        OL_W_ID,
+        OL_D_ID,
+        OL_O_ID,
+        OL_NUMBER,
+        OL_I_ID,
+        OL_C_ID
+      ) VALUES (%s, %s, %s, %s, %s, %s);""",
+      (
+        w_id,
+        d_id,
+        next_o_id,
+        i+1, #1-based indexing
+        ol_i_id,
+        c_id
+      ))
+    session.execute("""
+      INSERT INTO order_line_by_order (
+        OL_W_ID,
+        OL_D_ID,
+        OL_O_ID,
+        OL_NUMBER,
+        OL_I_ID,
+        OL_C_ID
+      ) VALUES (%s, %s, %s, %s, %s, %s);""",
+      (
+        w_id,
+        d_id,
+        next_o_id,
+        i+1, #1-based indexing
+        ol_i_id,
+        c_id
+      ))
+  
   # print('bef', total_amount)
   d_tax = district.d_tax
   warehouse = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")[0]
@@ -165,4 +298,3 @@ def execute_t1(session, args_arr):
   for i in range(num_items):
     print(items[i][0], item_names[i], items[i][1], items[i][2], item_amounts[i], remaining_qtys[i])
 
-  #### todo: update duplicate fields in other tables when schema merged
