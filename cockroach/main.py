@@ -1,25 +1,45 @@
 import sys
 import psycopg2
 from argparse import ArgumentParser, RawTextHelpFormatter
-from top_balance import top_balance
-from order_status import order_status
+from transactions.proj import new_order_transaction
+from transactions.proj import payment_transaction
+from transactions.proj import delivery_transaction
+from transactions.order_status import execute_t4
+from transactions.stock_level import execute_t5
+from transactions.popular_item import execute_t6
+from transactions.top_balance import execute_t7
+from transactions.related_customer import execute_t8
+from stats import get_stats
 
 def main():
-    # file = open(file_path, 'r')
-    # opt = parse_cmdline()
-    # for line in file:
-    #     if line == 'T':
-    #         top_balance().execute(opt)
-    
+
     opt = parse_cmdline()
-    print('starting')
     connection = psycopg2.connect(opt.dsn)
     print('connected succesfully')
-    top_balance().execute(connection)
-    order_status().execute(connection, '1', '1', '1')
 
-    
+    #execute transactions
+    for line in sys.stdin:
+        instruct = line.split()
+        transact = line[0]
+        if transact == 'N':
+            new_order_transaction(connection, instruct[1], instruct[2], instruct[3], instruct[4], instruct[5], instruct[6], instruct[7])
+        elif transact == 'P':
+            payment_transaction(connection, instruct[1], instruct[2], instruct[3], instruct[4])
+        elif transact == 'D':
+            delivery_transaction(connection, instruct[1], instruct[2])
+        elif transact == 'O':
+            execute_t4(connection, instruct[1], instruct[2], instruct[3])
+        elif transact == 'S':
+            execute_t5(connection, instruct[1], instruct[2], instruct[3], instruct[4])
+        elif transact == 'I':
+            execute_t6(connection, instruct[1], instruct[2], instruct[3])
+        elif transact == 'T':
+            execute_t7(connection)
+        elif transact == 'R':
+            execute_t8(connection, instruct[1], instruct[2], instruct[3])
 
+    #calc and write stats to '0.csv'
+    get_stats(connection)    
 
 def parse_cmdline():
     parser = ArgumentParser(description=__doc__,
@@ -54,6 +74,4 @@ def parse_cmdline():
 
 
 if __name__ == "__main__":
-    # file_path = sys.argv[1]
-    # database_location = sys.argv[2]
     main()
