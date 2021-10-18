@@ -1,6 +1,5 @@
 CREATE KEYSPACE IF NOT EXISTS wholesale_supplier
-WITH replication = {'class':'NetworkTopologyStrategy', 'replication_factor' : 1}; 
--- TODO will need to change to replication factor 3
+WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3}; 
 
 CREATE TABLE IF NOT EXISTS wholesale_supplier.warehouse (
 	W_ID INT,
@@ -109,6 +108,10 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line (
 	OL_I_NAME VARCHAR,
     OL_I_PRICE DECIMAL,
 	OL_C_ID INT,
+	OL_C_FIRST VARCHAR,
+	OL_C_MIDDLE VARCHAR,
+	OL_C_LAST VARCHAR,
+	OL_O_ENTRY_D TIMESTAMP,
 	PRIMARY KEY ((OL_W_ID, OL_D_ID), OL_O_ID, OL_QUANTITY, OL_NUMBER,OL_C_ID)
 ) WITH CLUSTERING ORDER BY (OL_O_ID DESC, OL_QUANTITY DESC);
 
@@ -179,25 +182,17 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_customer (
 	PRIMARY KEY ((OL_W_ID), OL_D_ID, OL_C_ID, OL_O_ID, OL_I_ID, OL_NUMBER)
 );
 
--- For T8
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_warehouse_item (
+
+-- For T6/T8
+CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
 	OL_W_ID INT,
 	OL_D_ID INT,
 	OL_O_ID INT,
 	OL_NUMBER INT,
 	OL_I_ID INT,
-    -- extra
-	OL_C_ID INT,
-	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_C_ID, OL_O_ID, OL_NUMBER)
-);
-
--- For T6
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
-	OL_I_ID INT,
-	OL_W_ID INT,
-	OL_D_ID INT,
-	OL_O_ID INT,
-	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID)
+	-- extra
+	OL_C_ID INT, 
+	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)
 );
 
 -- For T8

@@ -40,7 +40,7 @@ def perform_transaction(session):
             i_id = order_items_dict[o_id][i]
             query_matching_orders_1 = SimpleStatement(
                 f'SELECT OL_W_ID, OL_D_ID, OL_O_ID, OL_C_ID  \
-                FROM wholesale_supplier.order_line_by_warehouse_item \
+                FROM wholesale_supplier.order_line_by_item \
                 WHERE OL_I_ID = {i_id} and OL_W_ID < {w_id}'
             )
             matching_orders_1 = session.execute(query_matching_orders_1)
@@ -49,7 +49,7 @@ def perform_transaction(session):
 
             query_matching_orders_2 = SimpleStatement(
                 f'SELECT OL_W_ID, OL_D_ID, OL_C_ID, OL_O_ID  \
-                FROM wholesale_supplier.order_line_by_warehouse_item \
+                FROM wholesale_supplier.order_line_by_item \
                 WHERE OL_I_ID = {i_id} and OL_W_ID > {w_id}'
             )
             matching_orders_2 = session.execute(query_matching_orders_2)

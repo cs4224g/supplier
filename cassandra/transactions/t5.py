@@ -28,10 +28,10 @@ def perform_transaction(session):
         WHERE OL_W_ID = {w_id} AND OL_D_ID = {d_id} \
         AND OL_O_ID < {next_avail_order_id} AND OL_O_ID >= {next_avail_order_id - no_last_orders}')
       
-    retrieved_item_ids = list()
+    retrieved_item_ids = set()
     
     for row in session.execute(query_last_orders):
-        retrieved_item_ids.append(row.ol_i_id)
+        retrieved_item_ids.add(row.ol_i_id)
     
     print(len(retrieved_item_ids))
 

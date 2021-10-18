@@ -20,17 +20,18 @@ def perform_transaction(session):
     min_order_id = max_order_id - int(no_last_orders)
 
     query_last_orders = SimpleStatement(
-        f'SELECT O_ID, O_ENTRY_D, O_C_FIRST, O_C_MIDDLE, O_C_LAST \
-        FROM wholesale_supplier.orders \
-        WHERE O_W_ID = {w_id} AND O_D_ID = {d_id} \
-        AND O_ID < {max_order_id} AND O_ID >= {min_order_id}')
+        f'SELECT OL_O_ID, OL_O_ENTRY_D, OL_C_FIRST, OL_C_MIDDLE, OL_C_LAST, OL_C_ID \
+        FROM wholesale_supplier.order_line \
+        WHERE OL_W_ID = {w_id} AND OL_D_ID = {d_id} \
+        AND OL_O_ID < {max_order_id} AND OL_O_ID >= {min_order_id}')
     last_orders = session.execute(query_last_orders)
 
-    order_ids = list()
+    order_ids = set()
+
     for last_order in last_orders:
-        print(last_order.o_id, last_order.o_entry_d)
-        print(last_order.o_c_first, last_order.o_c_middle, last_order.o_c_last)
-        order_ids.append(last_order.o_id)
+        print(last_order.ol_o_id, last_order.ol_o_entry_d)
+        print(last_order.ol_c_first, last_order.ol_c_middle, last_order.ol_c_last)
+        order_ids.add(last_order.ol_o_id)
     
     order_count = len(order_ids)
     print(order_count)

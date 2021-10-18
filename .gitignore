@@ -137,3 +137,5 @@ cassandra/*.scraps
 # cassandra error log
 *.err
 
+# data files
+*.csv
