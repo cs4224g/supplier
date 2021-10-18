@@ -121,6 +121,24 @@ def order_table():
     print_headers(order_cass)
     order_cass.to_csv('order_cass.csv', index=False)
     
+def order_by_carrier_id_table():
+    global order_by_carrier_id_cass
+    order_by_carrier_id_cass = pd.merge(order, customer,
+                    left_on=['o_w_id', 'o_d_id', 'o_c_id'],
+                    right_on=['c_w_id', 'c_d_id', 'c_id'],
+                    how='inner')
+    order_by_carrier_id_cass = order_by_carrier_id_cass.rename(columns={
+        'c_first': 'o_c_first',
+        'c_middle': 'o_c_middle',
+        'c_last': 'o_c_last'
+    })
+    pri_col = ['o_w_id', 'o_d_id', 'o_carrier_id', 'o_id', 'o_c_id'] # o_carrier_id in PK
+    rem_col = sorted(['o_ol_cnt', 'o_all_local', 'o_entry_d', 'o_c_first', 'o_c_middle', 'o_c_last'])
+    all_col = pri_col + rem_col
+    order_by_carrier_id_cass = order_by_carrier_id_cass[all_col]
+    print("order_by_carrier_id")
+    print_headers(order_by_carrier_id_cass)
+    order_by_carrier_id_cass.to_csv('order_by_carrier_id_cass.csv', index=False)
 
 def item_table():
     global item_cass
@@ -246,7 +264,7 @@ def order_line_by_order_table():
 
 
 def loadScript():
-    tables = ['warehouse','district','customer','order','item','order_line','stock','top_balance','order_status','order_line_by_customer','order_line_by_item','order_line_by_order']
+    tables = ['warehouse','district','customer','order','order_by_carrier_id','item','order_line','stock','top_balance','order_status','order_line_by_customer','order_line_by_item','order_line_by_order']
     for table in tables:
         if table == 'order':
             print(f'COPY wholesale_supplier.{table}s FROM \'{table}_cass.csv\' WITH DELIMITER=\',\' AND HEADER=TRUE;')
@@ -261,6 +279,7 @@ if __name__ == '__main__':
     district_table()
     customer_table()
     order_table()
+    order_by_carrier_id_table()
     item_table()
     order_line_table()              # needs item, order_cass
     stock_table()
