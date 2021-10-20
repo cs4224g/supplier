@@ -8,7 +8,7 @@ def execute_t5(connection, w_id, d_id, t, l):
     results = ''
     with connection.cursor() as cur:
         cur.execute("SELECT o_entry_d\
-                    FROM district, orders \
+                    FROM proj.district, proj.orders \
                     WHERE d_w_id = %s AND d_id = %s AND (o_d_id, o_w_id, o_id) = (d_w_id, d_id, (d_next_o_id - 1))"
                     , (w_id, d_id))
         
@@ -18,7 +18,7 @@ def execute_t5(connection, w_id, d_id, t, l):
         #get all items in last n orders
         #TODO: optimise???
         cur.execute("SELECT sum(DISTINCT ol_i_id) \
-                    FROM order_line, orders, stock \
+                    FROM proj.order_line, proj.orders, proj.stock \
                     WHERE ol_d_id = %s AND ol_w_id = %s \
                         AND ol_o_id = o_id AND o_entry_d <= %s \
                         AND (s_w_id, s_i_id) = (ol_w_id, ol_i_id) \

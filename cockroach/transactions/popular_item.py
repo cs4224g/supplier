@@ -13,7 +13,7 @@ def execute_t6(connection, w_id, d_id, l):
     results = ''
     with connection.cursor() as cur:
         cur.execute('SELECT o_id, o_entry_d, c_first, c_middle, c_last\
-                    FROM orders, district, customer\
+                    FROM proj.orders, proj.district, proj.customer\
                     WHERE (o_w_id, o_d_id) = (d_w_id, d_id)\
                     AND (d_w_id, d_id) = (%s, %s)\
                     AND o_id < d_next_o_id\
@@ -28,8 +28,8 @@ def execute_t6(connection, w_id, d_id, l):
         #find popular items
         for order in results:
             cur.execute('SELECT i_name, ol_quantity \
-                        FROM item, order_line \
-                        WHERE ol_quantity = (SELECT max(ol_quantity) FROM order_line WHERE (ol_w_id, ol_d_id, ol_o_id) = (%s, %s, %s))\
+                        FROM proj.item, proj.order_line \
+                        WHERE ol_quantity = (SELECT max(ol_quantity) FROM proj.order_line WHERE (ol_w_id, ol_d_id, ol_o_id) = (%s, %s, %s))\
                         AND i_id = ol_i_id AND (ol_w_id, ol_d_id, ol_o_id) = (%s, %s, %s)', 
                         (w_id, d_id, order[0], w_id, d_id, order[0]))
 

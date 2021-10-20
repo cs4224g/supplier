@@ -8,7 +8,7 @@ def execute_t4(connection, c_w_id, c_d_id, c_id):
     with connection.cursor() as cur:
         #output customer name and balance
         cur.execute("SELECT c_first, c_middle, c_last, c_balance \
-                    FROM customer \
+                    FROM proj.customer \
                     WHERE c_w_id = %s AND c_d_id = %s AND c_id = %s", 
                     (c_w_id, c_d_id, c_id))
 
@@ -16,7 +16,7 @@ def execute_t4(connection, c_w_id, c_d_id, c_id):
 
         #customer last order information
         cur.execute("SELECT o_id, o_entry_d, o_carrier_id \
-                    FROM orders \
+                    FROM proj.orders \
                     WHERE o_w_id = %s AND o_d_id = %s AND o_c_id = %s", 
                     (c_w_id, c_d_id, c_id))
 
@@ -28,7 +28,7 @@ def execute_t4(connection, c_w_id, c_d_id, c_id):
 
         #all the items in the customer's last order
         cur.execute("SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d \
-                    FROM order_line \
+                    FROM proj.order_line \
                     WHERE ol_w_id = %s AND ol_d_id = %s AND ol_o_id = %s", 
 
                     (c_w_id, c_d_id, o_id)

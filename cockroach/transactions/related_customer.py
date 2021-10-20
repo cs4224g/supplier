@@ -10,11 +10,11 @@ def execute_t8(connection, c_w_id, c_d_id, c_id):
     results = ''
     with connection.cursor() as cur:
         cur.execute("SELECT c_w_id, c_d_id, c_id, COUNT(DISTINCT o.ol_i_id) \
-                    FROM customer, (orders \
-                    INNER JOIN order_line ON (o_w_id, o_d_id, o_id) = (ol_w_id, ol_d_id, ol_o_id)) o, \
+                    FROM proj.customer, (proj.orders \
+                    INNER JOIN proj.order_line ON (o_w_id, o_d_id, o_id) = (ol_w_id, ol_d_id, ol_o_id)) o, \
                     ( \
                         SELECT ol_o_id, ol_i_id \
-                        FROM orders, order_line \
+                        FROM proj.orders, proj.order_line \
                         WHERE (ol_w_id, ol_d_id) = (%s, %s) \
                         AND (o_w_id, o_d_id) = (%s, %s) \
                         AND o_id = ol_o_id \

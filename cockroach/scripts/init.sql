@@ -19,7 +19,8 @@ CREATE TABLE proj.warehouse(
     W_STATE STRING,
     W_ZIP STRING,
     W_TAX DECIMAL(4, 4),
-    W_YTD DECIMAL(12, 2)
+    W_YTD DECIMAL(12, 2),
+    INDEX index_w_ytd (W_YTD)
 );
 CREATE TABLE proj.district(
     D_W_ID INT references proj.warehouse (W_ID) ON DELETE CASCADE,
@@ -33,7 +34,9 @@ CREATE TABLE proj.district(
     D_TAX DECIMAL(4, 4),
     D_YTD DECIMAL(12, 2),
     D_NEXT_O_ID INT,
-    PRIMARY KEY (D_W_ID, D_ID)
+    PRIMARY KEY (D_W_ID, D_ID),
+    INDEX index_next_o_id (D_NEXT_O_ID),
+    INDEX index_d_ytd (D_YTD)
 );
 CREATE TABLE proj.customer(
     C_W_ID INT,
@@ -58,7 +61,10 @@ CREATE TABLE proj.customer(
     C_DELIVERY_CNT INT,
     C_DATA STRING,
     PRIMARY KEY(C_W_ID, C_D_ID, C_ID),
-    FOREIGN KEY(C_W_ID, C_D_ID) references proj.district (D_W_ID, D_ID)
+    FOREIGN KEY(C_W_ID, C_D_ID) references proj.district (D_W_ID, D_ID), 
+    INDEX index_c_ytd_payment (C_YTD_PAYMENT),
+    INDEX index_c_balance (C_BALANCE),
+    INDEX index_payment_cnt (C_PAYMENT_CNT)
 );
 CREATE TABLE proj.orders(
     O_W_ID INT,
@@ -70,7 +76,10 @@ CREATE TABLE proj.orders(
     O_ALL_LOCAL DECIMAL(1, 0),
     O_ENTRY_D TIMESTAMP,
     PRIMARY KEY(O_W_ID, O_D_ID, O_ID),
-    FOREIGN KEY(O_W_ID, O_D_ID, O_C_ID) references proj.customer(C_W_ID, C_D_ID, C_ID)
+    FOREIGN KEY(O_W_ID, O_D_ID, O_C_ID) references proj.customer(C_W_ID, C_D_ID, C_ID),
+    INDEX index_o_entry_d (O_ENTRY_D),
+    INDEX index_o_c_id (O_C_ID),
+    INDEX index_o_carrier_id (O_CARRIER_ID)
 );
 CREATE TABLE proj.item(
     I_ID INT PRIMARY KEY,
@@ -92,7 +101,9 @@ CREATE TABLE proj.order_line(
     OL_DIST_INFO STRING,
     PRIMARY KEY(OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER),
     FOREIGN KEY(OL_W_ID, OL_D_ID, OL_O_ID) references proj.orders (O_W_ID, O_D_ID, O_ID) ON DELETE CASCADE,
-    FOREIGN KEY(OL_I_ID) references proj.item (I_ID) ON DELETE CASCADE
+    FOREIGN KEY(OL_I_ID) references proj.item (I_ID) ON DELETE CASCADE,
+    INDEX index_ol_i_id (OL_I_ID),
+    INDEX index_ol_quantity (OL_QUANTITY)
 );
 CREATE TABLE proj.stock(
     S_W_ID INT references proj.warehouse (W_ID) ON DELETE CASCADE,
@@ -112,100 +123,9 @@ CREATE TABLE proj.stock(
     S_DIST_09 STRING,
     S_DIST_10 STRING,
     S_DATA STRING,
-    PRIMARY KEY(S_W_ID, S_I_ID)
+    PRIMARY KEY(S_W_ID, S_I_ID),
+    INDEX index_s_ytd (S_YTD),
+    INDEX index_s_quantity (S_QUANTITY),
+    INDEX index_s_order_cnt (S_ORDER_CNT),
+    INDEX index_s_remote_cnt (S_REMOTE_CNT)
 );
-IMPORT INTO proj.warehouse (
-    W_ID,
-    W_NAME,
-    W_STREET_1,
-    W_STREET_2,
-    W_CITY,
-    W_STATE,
-    W_ZIP,
-    W_TAX,
-    W_YTD
-) CSV DATA ('http://localhost:3000/warehouse.csv');
-IMPORT INTO proj.district (
-    D_W_ID,
-    D_ID,
-    D_NAME,
-    D_STREET_1,
-    D_STREET_2,
-    D_CITY,
-    D_STATE,
-    D_ZIP,
-    D_TAX,
-    D_YTD,
-    D_NEXT_O_ID
-) CSV DATA ('http://localhost:3000/district.csv');
-IMPORT INTO proj.customer(
-    C_W_ID,
-    C_D_ID,
-    C_ID,
-    C_FIRST,
-    C_MIDDLE,
-    C_LAST,
-    C_STREET_1,
-    C_STREET_2,
-    C_CITY,
-    C_STATE,
-    C_ZIP,
-    C_PHONE,
-    C_SINCE,
-    C_CREDIT,
-    C_CREDIT_LIM,
-    C_DISCOUNT,
-    C_BALANCE,
-    C_YTD_PAYMENT,
-    C_PAYMENT_CNT,
-    C_DELIVERY_CNT,
-    C_DATA
-) CSV DATA ('http://localhost:3000/customer.csv') WITH nullif = 'null';
-IMPORT INTO proj.orders(
-    O_W_ID,
-    O_D_ID,
-    O_ID,
-    O_C_ID,
-    O_CARRIER_ID,
-    O_OL_CNT,
-    O_ALL_LOCAL,
-    O_ENTRY_D
-) CSV DATA ('http://localhost:3000/order.csv') WITH nullif = 'null';
-IMPORT INTO proj.item(
-    I_ID,
-    I_NAME,
-    I_PRICE,
-    I_IM_ID,
-    I_DATA
-) CSV DATA ('http://localhost:3000/item.csv');
-IMPORT INTO proj.order_line(
-    OL_W_ID,
-    OL_D_ID,
-    OL_O_ID,
-    OL_NUMBER,
-    OL_I_ID,
-    OL_DELIVERY_D,
-    OL_AMOUNT,
-    OL_SUPPLY_W_ID,
-    OL_QUANTITY,
-    OL_DIST_INFO
-) CSV DATA ('http://localhost:3000/order-line.csv') WITH nullif = 'null';
-IMPORT INTO proj.stock(
-    S_W_ID,
-    S_I_ID,
-    S_QUANTITY,
-    S_YTD,
-    S_ORDER_CNT,
-    S_REMOTE_CNT,
-    S_DIST_01,
-    S_DIST_02,
-    S_DIST_03,
-    S_DIST_04,
-    S_DIST_05,
-    S_DIST_06,
-    S_DIST_07,
-    S_DIST_08,
-    S_DIST_09,
-    S_DIST_10,
-    S_DATA
-) CSV DATA ('http://localhost:3000/stock.csv');

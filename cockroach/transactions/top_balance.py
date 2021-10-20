@@ -8,7 +8,7 @@ def execute_t7(connection):
     results = ''
     with connection.cursor() as cur:
         cur.execute("SELECT c_first, c_middle, c_last, c_balance, w_name, d_name \
-                    FROM customer, warehouse, district \
+                    FROM proj.customer, proj.warehouse, proj.district \
                     WHERE c_d_id = d_id AND d_w_id = w_id AND c_w_id = w_id \
                     ORDER BY c_balance DESC LIMIT 10;"
                     )
