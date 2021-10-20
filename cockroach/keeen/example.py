@@ -312,21 +312,14 @@ def main():
     logging.basicConfig(level=logging.DEBUG if opt.verbose else logging.INFO)
 
     conn = psycopg2.connect(opt.dsn)
-    # create_accounts(conn)
-    # print_balances(conn)
-
-    amount = 100
-    fromId = 1
-    toId = 2
 
     try:
-
-        # run_transaction(conn, lambda conn: payment_transaction(
-        #     conn, 1, 1, 1, 10))
+        # run_transaction(conn, lambda conn: new_order_transaction(
+        #     conn, 1, 1, 1, 1, [1], [1], [1]))
+        run_transaction(conn, lambda conn: payment_transaction(
+            conn, 1, 1, 1, 10))
         # run_transaction(conn, lambda conn: delivery_transaction(
         #     conn, 1, 2))
-        run_transaction(conn, lambda conn: new_order_transaction(
-            conn, 1, 1, 1, 1, [1], [1], [1]))
 
     # The function below is used to test the transaction retry logic.  It
     # can be deleted from production code.
@@ -337,10 +330,6 @@ def main():
         # and any others thrown by the database interaction.
         logging.debug("run_transaction(conn, op) failed: %s", ve)
         pass
-
-    # print_balances(conn)
-
-    # delete_accounts(conn)
 
     # Close communication with the database.
     conn.close()
