@@ -209,9 +209,13 @@ def execute_t1(session, args_arr):
             OL_DIST_INFO,
             OL_I_NAME,
             OL_I_PRICE,
-            OL_C_ID
+            OL_C_ID,
+            OL_C_FIRST,
+            OL_C_MIDDLE,
+            OL_C_LAST,
+            OL_O_ENTRY_D
           ) 
-      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
+      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, toTimestamp(Now()));""", 
         (
           w_id,
           d_id,
@@ -224,7 +228,10 @@ def execute_t1(session, args_arr):
           stock[2 + d_id],  # note: if schema of stocks changes, the index of S_DIST_XX will change too!
           item_info.i_name,
           item_info.i_price,
-          c_id
+          c_id,
+          customer.c_first,
+          customer.c_last,
+          customer.c_middle,
         ))
     
     # Create new order_line in 3 duplicate order_line tables too.
