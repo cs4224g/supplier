@@ -1,4 +1,5 @@
 import sys, time
+import numpy as np
 
 from cassandra.query import named_tuple_factory, BatchStatement, SimpleStatement
 
@@ -13,6 +14,19 @@ from transactions.t6 import execute_t6
 from transactions.t7 import execute_t7
 from transactions.t8 import execute_t8
 
+xact_map = {
+    "N":1,
+    "P":2,
+    "D":3,
+    "O":4,
+    "S":5,
+    "I":6,
+    "T":7,
+    "R":8
+}
+
+xact_latency = [[0,0] for i in range(9)]
+latencies = []
 
 if __name__ == '__main__':
     # For connecting to multiple clusters
@@ -20,6 +34,9 @@ if __name__ == '__main__':
     cluster = Cluster(['127.0.0.1'])
     session = cluster.connect('wholesale_supplier')
     session.row_factory = named_tuple_factory
+
+    num_transactions = 0
+    total_execution_time = 0 # in seconds
 
     for line in sys.stdin:
         input_arr = line.split(",")
@@ -47,7 +64,39 @@ if __name__ == '__main__':
         else:
             print('fall thru', xact)
 
+        latency_seconds = time.time() - start_time
+        total_execution_time += latency_seconds
+        num_transactions += 1
+        latencies.append(latency_seconds)
 
-        print(f'Time taken: {time.time() - start_time}')
+
+        # Transaction-specific latencies
+        xact_num = xact_map[xact]
+        xact_latency[xact_num][0] += 1
+        xact_latency[xact_num][1] += latency_seconds
 
     cluster.shutdown()
+
+    throughput = num_transactions / total_execution_time
+    avg_latency = total_execution_time / num_transactions * 1000 # in ms
+    median_latency = np.percentile(latencies, 50) * 1000
+    p95_latency = np.percentile(latencies, 95) * 1000
+    p99_latency = np.percentile(latencies, 99) * 1000
+
+    metrics = "{},{},{},{},{},{},{}".format(
+        num_transactions,
+        total_execution_time,
+        throughput,
+        avg_latency,
+        median_latency,
+        p95_latency,
+        p99_latency
+    )
+    print(metrics, file=sys.stderr)
+
+    for xact_num in range(1,9):
+        total_time = xact_latency[xact_num][1]
+        total_count = xact_latency[xact_num][0]
+        xact_avg_latency = total_time / total_count
+        xact_metric = f'T{xact_num}: {xact_avg_latency}s'
+        print(xact_metric)
