@@ -1,7 +1,9 @@
 #!/bin/bash
 allocate_server() {
     experiment_type=$2
+    db = $3
     echo "$experiment_type"
+    echo "db"
     for ((i=0; i<40; i++))
     do
         machine_name="xcnd$((40 + $i % 5))"
@@ -9,7 +11,7 @@ allocate_server() {
         file_name="xact_files_$experiment_type/$i.txt"
         echo $file_name
         # -q to suppress banner
-        ssh -q $machine_name "cd /temp/cs4224-group-g-cassandra && \
+        ssh -q $machine_name "cd /temp/cs4224-group-g-$3 && \
         nohup ./run_client.sh $experiment_type $i &>/dev/null &"
     done
 }
@@ -30,10 +32,10 @@ get_overall_stats() {
 }
 
 echo "Starting shell script..."
-if [[$1 = "experiment"]]
+if [[ $1 = "experiment" ]]
 then
     allocate_server
-elif [[$1 = "stats"]]
+elif [[ $1 = "stats" ]]
 then 
     get_overall_stats
 fi
