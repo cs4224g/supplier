@@ -1,6 +1,5 @@
 CREATE KEYSPACE IF NOT EXISTS wholesale_supplier
-WITH replication = {'class':'NetworkTopologyStrategy', 'replication_factor' : 1}; 
--- TODO will need to change to replication factor 3
+WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3}; 
 
 CREATE TABLE IF NOT EXISTS wholesale_supplier.warehouse (
 	W_ID INT,
@@ -65,7 +64,6 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.customer (
 	PRIMARY KEY((C_W_ID, C_D_ID), C_ID, C_BALANCE)
 ) WITH CLUSTERING ORDER BY (C_ID ASC, C_BALANCE DESC);
 
-
 CREATE TABLE IF NOT EXISTS wholesale_supplier.orders (
 	O_W_ID INT,
 	O_D_ID INT,
@@ -82,6 +80,21 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.orders (
 	PRIMARY KEY ((O_W_ID, O_D_ID), O_ID, O_C_ID)
 ) WITH CLUSTERING ORDER BY (O_ID DESC); 
 
+CREATE TABLE IF NOT EXISTS wholesale_supplier.order_by_carrier_id (
+	O_W_ID INT,
+	O_D_ID INT,
+	O_ID INT,
+	O_C_ID INT,
+	O_CARRIER_ID INT,
+	O_OL_CNT DECIMAL,
+	O_ALL_LOCAL DECIMAL,
+	O_ENTRY_D TIMESTAMP,
+    -- Extra
+	O_C_FIRST VARCHAR,
+	O_C_MIDDLE VARCHAR,
+	O_C_LAST VARCHAR,
+	PRIMARY KEY ((O_W_ID, O_D_ID), O_CARRIER_ID, O_ID, O_C_ID)
+) WITH CLUSTERING ORDER BY (O_CARRIER_ID ASC, O_ID ASC);
 
 CREATE TABLE IF NOT EXISTS wholesale_supplier.item (
 	I_ID INT,
@@ -107,6 +120,10 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line (
 	OL_I_NAME VARCHAR,
     OL_I_PRICE DECIMAL,
 	OL_C_ID INT,
+	OL_C_FIRST VARCHAR,
+	OL_C_MIDDLE VARCHAR,
+	OL_C_LAST VARCHAR,
+	OL_O_ENTRY_D TIMESTAMP,
 	PRIMARY KEY ((OL_W_ID, OL_D_ID), OL_O_ID, OL_QUANTITY, OL_NUMBER,OL_C_ID)
 ) WITH CLUSTERING ORDER BY (OL_O_ID DESC, OL_QUANTITY DESC);
 
@@ -177,25 +194,17 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_customer (
 	PRIMARY KEY ((OL_W_ID), OL_D_ID, OL_C_ID, OL_O_ID, OL_I_ID, OL_NUMBER)
 );
 
--- For T8
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_warehouse_item (
+
+-- For T6/T8
+CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
 	OL_W_ID INT,
 	OL_D_ID INT,
 	OL_O_ID INT,
 	OL_NUMBER INT,
 	OL_I_ID INT,
-    -- extra
-	OL_C_ID INT,
-	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_C_ID, OL_O_ID, OL_NUMBER)
-);
-
--- For T6
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
-	OL_I_ID INT,
-	OL_W_ID INT,
-	OL_D_ID INT,
-	OL_O_ID INT,
-	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID)
+	-- extra
+	OL_C_ID INT, 
+	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)
 );
 
 -- For T8

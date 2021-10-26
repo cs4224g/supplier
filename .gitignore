@@ -128,5 +128,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# own csvs
+cassandra/csvs/*
+cassandra/*.in
+cassandra/*.out
+cassandra/*.scraps
+
 # cassandra error log
 *.err
+
+# data files
+*.csv
