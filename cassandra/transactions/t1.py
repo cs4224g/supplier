@@ -14,7 +14,7 @@ def get_items(num_items):
   return items
 
 def execute_t1(session, args_arr):
-  print("T1 New Order Transaction called!\n----------------------")
+  print("T1 New Order Transaction called!")
   # print(args_arr)
 
   ####################### extract query inputs    
@@ -107,9 +107,9 @@ def execute_t1(session, args_arr):
 
   for i, tup in enumerate(items):
     ol_i_id, ol_supply_w_id, ol_quantity = tup
-    # todo: list oob here
+
+    # shouldn't fail. The no new item i_ids are created during the program
     stocks = session.execute(f"""SELECT * FROM stock WHERE S_W_ID={ol_supply_w_id} AND S_I_ID={ol_i_id};""")
-    print(f"""SELECT * FROM stock WHERE S_W_ID={ol_supply_w_id} AND S_I_ID={ol_i_id};""")
     stock = stocks[0]
     # print(stock)
     
@@ -180,7 +180,7 @@ def execute_t1(session, args_arr):
     # in T4. So we DON'T insert OL_DELIVERY_D for an implicit null (col doesn't exist).
     # Don't need special null value bc we are not querying "WHERE OL_DELIVERY_D IS NULL"
 
-    print(f'insert into orderline',w_id, d_id,next_o_id,i+1)
+    # print(f'insert into orderline',w_id, d_id,next_o_id,i+1)
     session.execute("""
       INSERT INTO order_line (
             OL_W_ID,
