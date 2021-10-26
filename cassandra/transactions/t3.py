@@ -25,14 +25,15 @@ def execute_t3(session, args_arr):
       # Orders table: (o_w_id, o_d_id, o_id) uniquely identify row
       # So given (o_w_id, o_d_id), each o_id returned should be unique
       # Expect: bc of clustering, smallest o_id is first.
-      order = session.execute(f"""
+      orders = session.execute(f"""
         SELECT * FROM order_by_carrier_id WHERE o_w_id=%s and o_d_id=%s and o_carrier_id=%s LIMIT 1;""",
-        (w_id, d_id, -1))[0]
+        (w_id, d_id, -1))
       # assert order, f"No null carrier_id exists for w={w_id}, d={d_id}. Is this a problem or can silently skip?"  # ask
-      if not order:
+      if not orders:
         print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
         continue
-      print(order)
+      order = orders[0]
+      # print(order)
 
       ##### update carrier_id in order_by_carrier_id, which is a PK col
       session.execute(SimpleStatement(f"""
@@ -44,7 +45,8 @@ def execute_t3(session, args_arr):
           AND o_c_id={order.o_c_id};"""))
       
       session.execute(f"""
-        INSERT INTO order_by_carrier_id (o_w_id,
+        INSERT INTO order_by_carrier_id (
+                            o_w_id,
                             o_d_id,
                             o_carrier_id,
                             o_id,
@@ -69,6 +71,7 @@ def execute_t3(session, args_arr):
                           order.o_ol_cnt))
 
       #### check update of carrier_id is correct
+      # todo: list out of bounds for sy
       chk = session.execute(f"""
         SELECT * FROM order_by_carrier_id 
         WHERE o_w_id=%s 
@@ -113,7 +116,7 @@ def execute_t3(session, args_arr):
 
       #### update order_line table
       # when queried with (ol_w_id, ol_d_id, ol_o_id), each rows return should have unique ol_number
-      print()
+      # print()
       order_lines = session.execute(f"""
           SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
           (w_id, d_id, order.o_id))
@@ -121,7 +124,7 @@ def execute_t3(session, args_arr):
       # note: order_lines is an iterator and will be exhausted. Only one iteration is allowed without duplicating it.
       ol_amount_total = Decimal(0)
       for r in order_lines:
-        print(r)
+        # print(r)
         ol_amount_total += r.ol_amount
 
         session.execute(f"""
@@ -136,6 +139,7 @@ def execute_t3(session, args_arr):
           (r.ol_w_id, r.ol_d_id, r.ol_o_id, r.ol_quantity, r.ol_number, r.ol_c_id))
         
       #### check order_lines correctly updated
+      # todo: comment out
       print()
       order_lines = session.execute(f"""
         SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
