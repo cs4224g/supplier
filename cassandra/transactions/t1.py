@@ -1,6 +1,5 @@
 import sys
-
-from cassandra.query import named_tuple_factory, SimpleStatement
+from cassandra.query import BatchStatement, SimpleStatement
 from decimal import Decimal
 from datetime import datetime
 
@@ -15,7 +14,6 @@ def get_items(num_items):
 
 def execute_t1(session, args_arr):
   print("T1 New Order Transaction called!")
-  # print(args_arr)
 
   ####################### extract query inputs    
   assert len(args_arr) == 5, "Wrong length of argments for T1"
@@ -120,15 +118,17 @@ def execute_t1(session, args_arr):
     if adj_qty < 10:
       adj_qty += 100
     remaining_qtys.append(adj_qty)
+
     # with addition of S_QUANTITY to PK of stock, must delete and reinsert to update
-    session.execute(f"""
+    batch = BatchStatement()
+    batch.add(SimpleStatement(f"""
       DELETE from stock 
       WHERE s_w_id=%s
       AND s_i_id=%s
       AND s_quantity=%s;
-    """, (ol_supply_w_id, ol_i_id, stock.s_quantity))
+    """), (ol_supply_w_id, ol_i_id, stock.s_quantity))
 
-    session.execute("""
+    batch.add(SimpleStatement(f"""
       INSERT INTO stock (
         S_W_ID,
         S_I_ID,
@@ -147,7 +147,7 @@ def execute_t1(session, args_arr):
         S_DIST_09,
         S_DIST_10,
         S_DATA
-      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""", 
+      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"""), 
       (
         stock.s_w_id,
         stock.s_i_id,
@@ -167,6 +167,8 @@ def execute_t1(session, args_arr):
         stock.s_dist_10,
         stock.s_data
       ))
+    session.execute(batch)
+    
 
     item_infos = session.execute(f"""SELECT * FROM item WHERE i_id={ol_i_id}""")
     if not item_infos:
