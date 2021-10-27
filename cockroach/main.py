@@ -48,9 +48,6 @@ def main():
                     items.append(int(desc[0]))
                     warehouse.append(int(desc[1]))
                     quantity.append(int(desc[2]))
-                print(items)
-                print(warehouse)
-                print(quantity)
                 run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[2]), int(instruct[3]), int(instruct[1]), int(instruct[4]), items, warehouse, quantity))
             elif transact == 'P':
                 run_transaction(conn, lambda conn: payment_transaction(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
