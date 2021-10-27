@@ -3,7 +3,7 @@
 
 def execute_t7(connection):
 
-    print('\n================ executing top_balance query ================\n')
+    #print('\n================ executing top_balance query ================\n')
 
     results = ''
     with connection.cursor() as cur:
