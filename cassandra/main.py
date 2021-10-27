@@ -35,13 +35,14 @@ if __name__ == '__main__':
     session = cluster.connect('wholesale_supplier')
     session.row_factory = named_tuple_factory
 
-    num_transactions = 0
-    total_execution_time = 0 # in seconds
+    num_xacts = 0
+    total_exec_time = 0 # in seconds
 
     for line in sys.stdin:
         input_arr = line.split(",")
         xact = input_arr[0].strip()
 
+        print(f'{line} | Xact {num_xacts+1}')
         start_time = time.time()
         
         if(xact == 'N'):
@@ -65,8 +66,8 @@ if __name__ == '__main__':
             print('fall thru', xact)
 
         latency_seconds = time.time() - start_time
-        total_execution_time += latency_seconds
-        num_transactions += 1
+        total_exec_time += latency_seconds
+        num_xacts += 1
         latencies.append(latency_seconds)
 
 
@@ -77,15 +78,15 @@ if __name__ == '__main__':
 
     cluster.shutdown()
 
-    throughput = num_transactions / total_execution_time
-    avg_latency = total_execution_time / num_transactions * 1000 # in ms
+    throughput = num_xacts / total_exec_time if total_exec_time > 0 else 0
+    avg_latency = total_exec_time / num_xacts * 1000 if num_xacts > 0 else 0 # in ms
     median_latency = np.percentile(latencies, 50) * 1000
     p95_latency = np.percentile(latencies, 95) * 1000
     p99_latency = np.percentile(latencies, 99) * 1000
 
-    metrics = "{},{},{},{},{},{},{}".format(
-        num_transactions,
-        total_execution_time,
+    metrics = "{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f}".format(
+        num_xacts,
+        total_exec_time,
         throughput,
         avg_latency,
         median_latency,
