@@ -24,12 +24,11 @@ def execute_t1(session, args_arr):
   d_id = int(args_arr[3])
   num_items = int(args_arr[4])
   items = get_items(num_items)
-  # print(items)
 
   districts = session.execute(f"""SELECT * FROM district WHERE d_w_id={w_id} AND d_id={d_id};""")
+  if not districts:
+    return
   district = districts[0]
-  # print(district)
-  # print()
   next_o_id = district.d_next_o_id
 
   session.execute(f"""UPDATE district SET D_NEXT_O_ID={next_o_id + 1} WHERE d_w_id={w_id} AND d_id={d_id}""")
@@ -39,6 +38,8 @@ def execute_t1(session, args_arr):
   # print(district[0])
 
   customers = session.execute(f"""SELECT * FROM customer WHERE C_W_ID={w_id} AND C_D_ID={d_id} AND C_ID={c_id};""")
+  if not customers:
+    return
   customer = customers[0]
 
   is_all_local = len(list(filter(lambda tw: tw != w_id, [t[1] for t in items]))) == 0
@@ -108,8 +109,9 @@ def execute_t1(session, args_arr):
   for i, tup in enumerate(items):
     ol_i_id, ol_supply_w_id, ol_quantity = tup
 
-    # shouldn't fail. The no new item i_ids are created during the program
     stocks = session.execute(f"""SELECT * FROM stock WHERE S_W_ID={ol_supply_w_id} AND S_I_ID={ol_i_id};""")
+    if not stocks:
+      return
     stock = stocks[0]
     # print(stock)
     
@@ -167,8 +169,9 @@ def execute_t1(session, args_arr):
       ))
 
     item_infos = session.execute(f"""SELECT * FROM item WHERE i_id={ol_i_id}""")
+    if not item_infos:
+      return
     item_info = item_infos[0]
-    # print(item_info)
     price = item_info.i_price
     item_amount = ol_quantity * price
     total_amount += item_amount
@@ -274,7 +277,10 @@ def execute_t1(session, args_arr):
   
   # print('bef', total_amount)
   d_tax = district.d_tax
-  warehouse = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")[0]
+  warehouses = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")
+  if not warehouses:
+    return
+  warehouse = warehouses[0]
   w_tax = warehouse.w_tax
   total_amount *= (1 + d_tax + w_tax) * (1 - customer.c_discount)
   # print(d_tax)
