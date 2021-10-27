@@ -36,6 +36,15 @@ def perform_transaction(session):
     # For each order
     for o_id in order_items_dict:
         # For each item, find another order with this item
+        order_items = order_items_dict[o_id]
+        order_items_string = format_list(order_items) # (1,2,3,56,67)
+        # SELECT w_id, d_id, o_id from ORDER_LINE 
+        # WHERE W_ID != w_id 
+        # GROUP BY w_id, d_id, o_id
+
+
+        # Group by https://issues.apache.org/jira/browse/CASSANDRA-10707
+
         for i in range(len(order_items_dict[o_id]) - 1): # exclude last element
             i_id = order_items_dict[o_id][i]
             query_matching_orders_1 = SimpleStatement(
