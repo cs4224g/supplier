@@ -32,15 +32,23 @@ def main():
     #execute transactions
     with conn:
         for line in sys.stdin:
-            instruct = line.split()
+            instruct = line.strip().split(',')
             transact = line[0]
-            #each transaction is retried max 3 times
-            #for retry in range(1, max_retries + 1):
             start_time = time.time()
             no_retries = 0
-            #try:    
+
             if transact == 'N':
-                run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[1]), int(instruct[2]), int(instruct[3]), int(instruct[4]), [int(instruct[5])], [int(instruct[6])], [int(instruct[7])]))
+                no_items = instruct[4]
+                items = []
+                warehouse = []
+                quantity = []
+                for i in range(0, int(no_items)):
+                    next_item = sys.stdin.readline()
+                    desc = next_item.strip().split(',')
+                    items.append(int(desc[0]))
+                    warehouse.append(int(desc[1]))
+                    quantity.append(int(desc[2]))
+                run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[1]), int(instruct[2]), int(instruct[3]), int(instruct[4]), items, warehouse, quantity))
             elif transact == 'P':
                 run_transaction(conn, lambda conn: payment_transaction(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
             elif transact == 'D':
@@ -60,7 +68,7 @@ def main():
                 latency = time.time() - start_time
                 latencies.append(latency)
                 total_time += latency
-                
+
     transaction_throughput = no_transact/total_time
   
     #avg latency in ms
