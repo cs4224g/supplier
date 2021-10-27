@@ -9,7 +9,7 @@ def execute_t5(connection, w_id, d_id, t, l):
     with connection.cursor() as cur:
         cur.execute("SELECT o_entry_d\
                     FROM proj.district, proj.orders \
-                    WHERE d_w_id = %s AND d_id = %s AND (o_d_id, o_w_id, o_id) = (d_w_id, d_id, (d_next_o_id - 1))"
+                    WHERE d_w_id = %s AND d_id = %s AND (o_w_id, o_d_id, o_id) = (d_w_id, d_id, (d_next_o_id - 1))"
                     , (w_id, d_id))
         
         #n_date denotes the value of the latest order date
@@ -25,6 +25,7 @@ def execute_t5(connection, w_id, d_id, t, l):
                         AND s_quantity > %s\
                     LIMIT %s",
                     (d_id, w_id, n_date, t, l))
-        results = cur.fetchall()    
+        results = cur.fetchall()   
+        print(results[0][0]) 
         
-    print(results[0][0])
+    

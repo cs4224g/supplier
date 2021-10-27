@@ -95,7 +95,7 @@ CREATE TABLE proj.order_line(
     OL_NUMBER INT NOT NULL,
     OL_I_ID INT references proj.item (I_ID),
     OL_DELIVERY_D TIMESTAMP,
-    OL_AMOUNT DECIMAL(6, 2) NOT NULL,
+    OL_AMOUNT DECIMAL(7, 2) NOT NULL,--change from (6, 2) as stated on pdf to (7,2) to accomodate data files
     OL_SUPPLY_W_ID INT NOT NULL,
     OL_QUANTITY DECIMAL(2, 0),
     OL_DIST_INFO STRING,
