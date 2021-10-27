@@ -67,10 +67,10 @@ def main():
             elif transact == 'R':
                 run_transaction(conn, lambda conn: execute_t8(conn, instruct[1], instruct[2], instruct[3]))
                     
-                no_transact += 1
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
+            no_transact += 1
+            latency = time.time() - start_time
+            latencies.append(latency)
+            total_time += latency
 
     transaction_throughput = no_transact/total_time
   
