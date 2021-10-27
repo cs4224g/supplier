@@ -10,6 +10,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from transactions.proj import new_order_transaction
 from transactions.proj import payment_transaction
 from transactions.proj import delivery_transaction
+from transactions.proj import run_transaction
 from transactions.order_status import execute_t4
 from transactions.stock_level import execute_t5
 from transactions.popular_item import execute_t6
@@ -20,7 +21,7 @@ from stats import get_stats
 def main():
 
     #temporary username: test, pw: test1, host:192.168.51.3:26357, dbname = proj, sslmode default disabled 
-    connection = psycopg2.connect("postgresql://test:test1@192.168.51.3:26357/proj")
+    conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
 
     max_retries = 3
     no_transact = 0
@@ -29,58 +30,47 @@ def main():
     latencies = []
     
     #execute transactions
-    with connection:
+    with conn:
         for line in sys.stdin:
-            instruct = line.split()
+            instruct = line.strip().split(',')
             transact = line[0]
-            #each transaction is retried max 3 times
-            for retry in range(1, max_retries + 1):
-                start_time = time.time()
-                try:    
-                    if transact == 'N':
-                        new_order_transaction(connection, int(instruct[1]), int(instruct[2]), int(instruct[3]), int(instruct[4]), [int(instruct[5])], [int(instruct[6])], [int(instruct[7])])
-                    elif transact == 'P':
-                        payment_transaction(connection, instruct[1], instruct[2], instruct[3], instruct[4])
-                    elif transact == 'D':
-                        delivery_transaction(connection, instruct[1], instruct[2])
-                    elif transact == 'O':
-                        execute_t4(connection, instruct[1], instruct[2], instruct[3])
-                    elif transact == 'S':
-                        execute_t5(connection, instruct[1], instruct[2], instruct[3], instruct[4])
-                    elif transact == 'I':
-                        execute_t6(connection, instruct[1], instruct[2], instruct[3])
-                    elif transact == 'T':
-                        execute_t7(connection)
-                    elif transact == 'R':
-                        execute_t8(connection, instruct[1], instruct[2], instruct[3])
-                        
-                    no_transact += 1
-                    latency = time.time() - start_time
-                    latencies.append(latency)
-                    total_time += latency
+            start_time = time.time()
+            no_retries = 0
 
-                except SerializationFailure as e:
-                # This is a retry error, so we roll back the current
-                # transaction and sleep for a bit before retrying. The
-                # sleep time increases for each failed transaction.
-                    logging.debug("got error: %s", e)
-                    connection.rollback()
-                    logging.debug("EXECUTE SERIALIZATION_FAILURE BRANCH")
-                    sleep_ms = (2 ** retry) * 0.1 * (random.random() + 0.5)
-                    logging.debug("Sleeping %s seconds", sleep_ms)
-                    time.sleep(sleep_ms)
-
-                except psycopg2.Error as e:
-                    logging.debug("got error: %s", e)
-                    logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
-                    raise e
-
-            raise ValueError(
-                f"Transaction did not succeed after {max_retries} retries")
-
+            if transact == 'N':
+                no_items = instruct[4]
+                items = []
+                warehouse = []
+                quantity = []
+                for i in range(0, int(no_items)):
+                    next_item = sys.stdin.readline()
+                    desc = next_item.strip().split(',')
+                    items.append(int(desc[0]))
+                    warehouse.append(int(desc[1]))
+                    quantity.append(int(desc[2]))
+                run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[1]), int(instruct[2]), int(instruct[3]), int(instruct[4]), items, warehouse, quantity))
+            elif transact == 'P':
+                run_transaction(conn, lambda conn: payment_transaction(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+            elif transact == 'D':
+                run_transaction(conn, lambda conn: delivery_transaction(conn, instruct[1], instruct[2]))
+            elif transact == 'O':
+                run_transaction(conn, lambda conn: execute_t4(conn, instruct[1], instruct[2], instruct[3]))
+            elif transact == 'S':
+                run_transaction(conn, lambda conn: execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+            elif transact == 'I':
+                run_transaction(conn, lambda conn: execute_t6(conn, instruct[1], instruct[2], instruct[3]))
+            elif transact == 'T':
+                run_transaction(conn, lambda conn: execute_t7(conn))
+            elif transact == 'R':
+                run_transaction(conn, lambda conn: execute_t8(conn, instruct[1], instruct[2], instruct[3]))
+                    
+                no_transact += 1
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
 
     transaction_throughput = no_transact/total_time
-    
+  
     #avg latency in ms
     avg_transac_latency = total_time/no_transact * 1000 
     #median transaction latency in ms
@@ -91,7 +81,7 @@ def main():
     p99 = np.percentile(latencies, 99) * 1000  
     
     #write to stderr
-    measurements = [no_transact, total_time, transaction_throughput, avg_transac_latency, med, p95, p99]
+    measurements = [str(no_transact), str(total_time), str(transaction_throughput), str(avg_transac_latency), str(med), str(p95), str(p99)]
     m_str = ",".join(measurements)
     print(m_str, file=sys.stderr)
 

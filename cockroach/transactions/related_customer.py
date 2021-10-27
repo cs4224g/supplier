@@ -9,7 +9,8 @@ def execute_t8(connection, c_w_id, c_d_id, c_id):
 
     results = ''
     with connection.cursor() as cur:
-        cur.execute("SELECT c_w_id, c_d_id, c_id, COUNT(DISTINCT o.ol_i_id) \
+        #table a represents all the items ever bough by customer with identifier c_w_id, c_d_id, c_id
+        cur.execute("SELECT c_w_id, c_d_id, c_id, o.ol_o_id, COUNT(DISTINCT o.ol_i_id) \
                     FROM proj.customer, (proj.orders \
                     INNER JOIN proj.order_line ON (o_w_id, o_d_id, o_id) = (ol_w_id, ol_d_id, ol_o_id)) o, \
                     ( \
@@ -28,11 +29,12 @@ def execute_t8(connection, c_w_id, c_d_id, c_id):
                     )
         results = cur.fetchall()
         
-    #TODO: check correctness
-    # for record in results:
-    #     if(record[3] > 2): (???????)
-    #         print(record)
-    format_res(results)
+    final = []
+    for record in results:
+        #record[4] represents the number of items in common
+        if(record[4] >= 2): 
+            final.append([record[0], record[1], record[2]])
+    format_res(final)
 
 #format and prints results
 def format_res(res):
