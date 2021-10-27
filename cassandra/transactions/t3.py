@@ -1,4 +1,4 @@
-from cassandra.query import named_tuple_factory, SimpleStatement
+from cassandra.query import BatchStatement, SimpleStatement
 from decimal import Decimal
 
 def execute_t3(session, args_arr):
@@ -24,7 +24,6 @@ def execute_t3(session, args_arr):
       orders = session.execute(f"""
         SELECT * FROM order_by_carrier_id WHERE o_w_id=%s and o_d_id=%s and o_carrier_id=%s LIMIT 1;""",
         (w_id, d_id, -1))
-      # assert order, f"No null carrier_id exists for w={w_id}, d={d_id}. Is this a problem or can silently skip?"  # ask
       if not orders:
         # print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
         continue
@@ -32,15 +31,16 @@ def execute_t3(session, args_arr):
       # print(order)
 
       ##### update carrier_id in order_by_carrier_id, which is a PK col
-      session.execute(SimpleStatement(f"""
+      batch = BatchStatement()
+      batch.add(SimpleStatement(f"""
         DELETE FROM order_by_carrier_id 
         WHERE o_w_id={order.o_w_id} 
           AND o_d_id={order.o_d_id} 
           AND o_carrier_id={order.o_carrier_id} 
           AND o_id={order.o_id} 
           AND o_c_id={order.o_c_id};"""))
-      
-      session.execute(f"""
+
+      batch.add(SimpleStatement(f"""
         INSERT INTO order_by_carrier_id (
                             o_w_id,
                             o_d_id,
@@ -53,8 +53,8 @@ def execute_t3(session, args_arr):
                             o_c_middle,
                             o_entry_d,
                             o_ol_cnt) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                          (order.o_w_id,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                         (order.o_w_id,
                           order.o_d_id,
                           new_carrier_id,
                           order.o_id,
@@ -65,6 +65,8 @@ def execute_t3(session, args_arr):
                           order.o_c_middle,
                           order.o_entry_d,
                           order.o_ol_cnt))
+      
+      session.execute(batch)
 
       #### check update of carrier_id is correct
       # skipping check for benchmarking
@@ -78,14 +80,15 @@ def execute_t3(session, args_arr):
       # print(chk)
 
       ##### update carrier_id in orders, which is a PK col
-      session.execute(SimpleStatement(f"""
+      batch = BatchStatement()
+      batch.add(SimpleStatement(f"""
         DELETE FROM orders 
         WHERE o_w_id={order.o_w_id} 
           AND o_d_id={order.o_d_id} 
           AND o_id={order.o_id} 
           AND o_c_id={order.o_c_id};"""))
-      
-      session.execute(f"""
+
+      batch.add(SimpleStatement(f"""
         INSERT INTO orders (o_w_id,
                             o_d_id,
                             o_carrier_id,
@@ -97,8 +100,8 @@ def execute_t3(session, args_arr):
                             o_c_middle,
                             o_entry_d,
                             o_ol_cnt) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                          (order.o_w_id,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                         (order.o_w_id,
                           order.o_d_id,
                           new_carrier_id,
                           order.o_id,
@@ -109,13 +112,14 @@ def execute_t3(session, args_arr):
                           order.o_c_middle,
                           order.o_entry_d,
                           order.o_ol_cnt))
-
+      session.execute(batch)      
+      
       #### update order_line table
       # when queried with (ol_w_id, ol_d_id, ol_o_id), each rows return should have unique ol_number
       order_lines = session.execute(f"""
           SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
           (w_id, d_id, order.o_id))
-
+      
       if not order_lines:
         continue
 
@@ -155,13 +159,15 @@ def execute_t3(session, args_arr):
       customer = customer[0]
       # print(customer)
 
-      session.execute(SimpleStatement(f"""
+
+      batch = BatchStatement()
+      batch.add(SimpleStatement(f"""
         DELETE FROM customer 
         WHERE c_w_id={w_id} 
         and c_d_id={d_id} 
         and c_id={order.o_c_id};"""))
 
-      session.execute(f"""
+      batch.add(SimpleStatement(f"""
         INSERT INTO customer (c_w_id, 
                               c_d_id, 
                               c_id, 
@@ -185,8 +191,8 @@ def execute_t3(session, args_arr):
                               c_w_name,
                               c_ytd_payment,
                               c_zip) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                          (customer.c_w_id, 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                           (customer.c_w_id, 
                             customer.c_d_id, 
                             customer.c_id, 
                             customer.c_balance + ol_amount_total, 
@@ -209,16 +215,19 @@ def execute_t3(session, args_arr):
                             customer.c_w_name,
                             customer.c_ytd_payment,
                             customer.c_zip))
+      
+      session.execute(batch)
 
       #### customer's C_BALANCE duplicated in top_balance table
-      session.execute(SimpleStatement(f"""
+      batch = BatchStatement()
+      batch.add(SimpleStatement(f"""
         DELETE FROM top_balance 
         WHERE c_w_id={customer.c_w_id} 
         and c_d_id={customer.c_d_id} 
         and c_balance={customer.c_balance} 
         and c_id={customer.c_id};"""))
-        
-      session.execute(f"""
+
+      batch.add(SimpleStatement(f"""
         INSERT INTO top_balance (c_w_id,
                                  c_d_id,
                                  c_balance,
@@ -228,7 +237,7 @@ def execute_t3(session, args_arr):
                                  c_last,
                                  c_middle,
                                  c_w_name) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
                           (customer.c_w_id, 
                            customer.c_d_id, 
                            customer.c_balance + ol_amount_total,
@@ -238,7 +247,7 @@ def execute_t3(session, args_arr):
                            customer.c_last,
                            customer.c_middle,
                            customer.c_w_name))
-
+      session.execute(batch)
 
       #### check customer updated
       # customer = session.execute(SimpleStatement(f"""SELECT * FROM customer WHERE c_w_id={w_id} and c_d_id={d_id} and c_id={order.o_c_id};"""))[0]
