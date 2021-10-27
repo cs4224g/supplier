@@ -4,6 +4,7 @@ import numpy as np
 from cassandra.query import named_tuple_factory, BatchStatement, SimpleStatement
 
 from cassandra.cluster import Cluster
+from numpy.core.numeric import Inf
 
 from transactions.t1 import execute_t1
 from transactions.t2 import execute_t2
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     cluster.shutdown()
 
     throughput = num_xacts / total_exec_time if total_exec_time > 0 else 0
-    avg_latency = total_exec_time / num_xacts * 1000 if num_xacts > 0 else 0 # in ms
+    avg_latency = total_exec_time / num_xacts * 1000 if num_xacts > 0 else Inf # in ms
     median_latency = np.percentile(latencies, 50) * 1000
     p95_latency = np.percentile(latencies, 95) * 1000
     p99_latency = np.percentile(latencies, 99) * 1000
@@ -98,6 +99,6 @@ if __name__ == '__main__':
     for xact_num in range(1,9):
         total_time = xact_latency[xact_num][1]
         total_count = xact_latency[xact_num][0]
-        xact_avg_latency = total_time / total_count
+        xact_avg_latency = total_time / total_count if total_count > 0 else Inf
         xact_metric = f'T{xact_num}: {xact_avg_latency}s'
         print(xact_metric)
