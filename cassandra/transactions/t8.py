@@ -13,7 +13,7 @@ def process_input(user_input):
 
 def perform_transaction(session):
     session.row_factory = named_tuple_factory
-    # R,10,9,2819
+    # Test: R,10,9,2819
     query_items = SimpleStatement(
         f'SELECT OL_O_ID, OL_I_ID \
         FROM wholesale_supplier.order_line_by_customer \
@@ -32,60 +32,37 @@ def perform_transaction(session):
             order_items_dict[o_id] = [i_id]
     
     result = set()
-    potential_matches = set()
+    
     # For each order
     for o_id in order_items_dict:
+        potential_matches = set()
         # For each item, find another order with this item
         order_items = order_items_dict[o_id]
-        order_items_string = format_list(order_items) # (1,2,3,56,67)
-        # SELECT w_id, d_id, o_id from ORDER_LINE 
-        # WHERE W_ID != w_id 
-        # GROUP BY w_id, d_id, o_id
 
-
-        # Group by https://issues.apache.org/jira/browse/CASSANDRA-10707
-
-        for i in range(len(order_items_dict[o_id]) - 1): # exclude last element
-            i_id = order_items_dict[o_id][i]
+        for i_id in order_items:
             query_matching_orders_1 = SimpleStatement(
                 f'SELECT OL_W_ID, OL_D_ID, OL_O_ID, OL_C_ID  \
                 FROM wholesale_supplier.order_line_by_item \
                 WHERE OL_I_ID = {i_id} and OL_W_ID < {w_id}'
             )
             matching_orders_1 = session.execute(query_matching_orders_1)
-            for m in matching_orders_1:
-                potential_matches.add(m)
-
             query_matching_orders_2 = SimpleStatement(
                 f'SELECT OL_W_ID, OL_D_ID, OL_C_ID, OL_O_ID  \
                 FROM wholesale_supplier.order_line_by_item \
                 WHERE OL_I_ID = {i_id} and OL_W_ID > {w_id}'
             )
             matching_orders_2 = session.execute(query_matching_orders_2)
-            for m in matching_orders_2:
-                potential_matches.add(m)
+            matching_orders = [m for m in matching_orders_1] + [m for m in matching_orders_2]
 
-            rem_items = order_items_dict[o_id][i+1:]
-            rem_items_string = format_list(rem_items)
-
-            # For each matching order, check if they match on a second item
-            for m in potential_matches:
-                w_id_2 = m.ol_w_id
-                d_id_2 = m.ol_d_id
-                c_id_2 = m.ol_c_id
-                o_id_2 = m.ol_o_id
-                if (w_id_2, d_id_2, c_id_2) in result:
+            for m in matching_orders:
+                order_id = (m.ol_w_id, m.ol_d_id, m.ol_o_id)
+                cust_id = (m.ol_w_id, m.ol_d_id, m.ol_c_id)
+                if cust_id in result:
                     continue
-                
-                query_match_customer = SimpleStatement(
-                    f'SELECT OL_C_ID \
-                    FROM wholesale_supplier.order_line_by_order \
-                    WHERE OL_W_ID={w_id_2} AND OL_D_ID={d_id_2} AND OL_O_ID={o_id_2} AND \
-                    OL_I_ID in {rem_items_string};'
-                )
-                match_customer = session.execute(query_match_customer)
-                if match_customer:
-                    result.add((w_id_2, d_id_2, c_id_2))
+                elif order_id in potential_matches:
+                    result.add(cust_id)
+                else:
+                    potential_matches.add(order_id)
 
     for r in result:
         w_id_result, d_id_result, c_id_result = r
