@@ -1,4 +1,4 @@
-from cassandra.query import named_tuple_factory, SimpleStatement
+from cassandra.query import BatchStatement, named_tuple_factory, SimpleStatement
 from decimal import Decimal
 
 def execute_t2(session, args_arr):
@@ -48,10 +48,14 @@ def execute_t2(session, args_arr):
                                         WHERE d_w_id={c_w_id} AND d_id={c_d_id};""")
         session.execute(upd_district)
 
-        session.execute(SimpleStatement(f"""DELETE FROM customer 
-                                            WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};"""))
-        # literal quoting below; doesn't escape timestamps properly
-        session.execute(f"""
+        batch = BatchStatement()
+        batch.add(SimpleStatement(f"""
+          DELETE FROM customer 
+          WHERE c_w_id={c_w_id} 
+          and c_d_id={c_d_id} 
+          and c_id={c_id};"""))
+
+        batch.add(SimpleStatement(f"""
         INSERT INTO customer (c_w_id, 
                               c_d_id, 
                               c_id, 
@@ -75,8 +79,8 @@ def execute_t2(session, args_arr):
                               c_w_name,
                               c_ytd_payment,
                               c_zip) 
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                            (ret_customer.c_w_id, 
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                             (ret_customer.c_w_id, 
                               ret_customer.c_d_id, 
                               ret_customer.c_id, 
                               ret_customer.c_balance - payment, 
@@ -100,16 +104,20 @@ def execute_t2(session, args_arr):
                               ret_customer.c_ytd_payment + float(payment),
                               ret_customer.c_zip))
         
+        session.execute(batch)
+        
         # c_balance is duplicated in top_balance
         # c_balance is PK col in top_balance table, need to delete and reinsert updated row
-        session.execute(SimpleStatement(f"""
+        
+        batch = BatchStatement()
+        batch.add(SimpleStatement(f"""
           DELETE FROM top_balance 
           WHERE c_w_id={c_w_id} 
           and c_d_id={c_d_id} 
           and c_balance={ret_customer.c_balance} 
           and c_id={c_id};"""))
-        
-        session.execute(f"""
+
+        batch.add(SimpleStatement(f"""
           INSERT INTO top_balance (c_w_id,
                                    c_d_id,
                                    c_balance,
@@ -119,8 +127,8 @@ def execute_t2(session, args_arr):
                                    c_last,
                                    c_middle,
                                    c_w_name) 
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                            (ret_customer.c_w_id, 
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                             (ret_customer.c_w_id, 
                               ret_customer.c_d_id, 
                               ret_customer.c_balance - payment, 
                               ret_customer.c_id, 
@@ -129,6 +137,7 @@ def execute_t2(session, args_arr):
                               ret_customer.c_last,
                               ret_customer.c_middle,
                               ret_customer.c_w_name))
+        session.execute(batch)
 
         # print required info; printing updated values
         # print('--------------------')
