@@ -21,7 +21,7 @@ from stats import get_stats
 def main():
 
     #temporary username: test, pw: test1, host:192.168.51.3:26357, dbname = proj, sslmode default disabled 
-    conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
+    conn = psycopg2.connect("postgresql://test:test1@192.168.51.3:26357/proj")
 
     max_retries = 3
     no_transact = 0
