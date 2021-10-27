@@ -4,7 +4,7 @@ from decimal import Decimal
 # todo: remove all prints and queries for checking if updates are correctly applied before testing.
 def execute_t3(session, args_arr):
     # D,2,8
-    print("T3 Delivery Transaction called!\n----------------------")
+    print("T3 Delivery Transaction called!")
     # print(args_arr)
 
     ### extract query inputs    
@@ -20,19 +20,19 @@ def execute_t3(session, args_arr):
       - C_DELIVERY_CNT, in tables: customer
     """
     
-    # for d_id in range(1, 2):
     for d_id in range(1, 11): # [1..10]
       # Orders table: (o_w_id, o_d_id, o_id) uniquely identify row
       # So given (o_w_id, o_d_id), each o_id returned should be unique
       # Expect: bc of clustering, smallest o_id is first.
-      order = session.execute(f"""
+      orders = session.execute(f"""
         SELECT * FROM order_by_carrier_id WHERE o_w_id=%s and o_d_id=%s and o_carrier_id=%s LIMIT 1;""",
-        (w_id, d_id, -1))[0]
+        (w_id, d_id, -1))
       # assert order, f"No null carrier_id exists for w={w_id}, d={d_id}. Is this a problem or can silently skip?"  # ask
-      if not order:
-        print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
+      if not orders:
+        # print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
         continue
-      print(order)
+      order = orders[0]
+      # print(order)
 
       ##### update carrier_id in order_by_carrier_id, which is a PK col
       session.execute(SimpleStatement(f"""
@@ -44,7 +44,8 @@ def execute_t3(session, args_arr):
           AND o_c_id={order.o_c_id};"""))
       
       session.execute(f"""
-        INSERT INTO order_by_carrier_id (o_w_id,
+        INSERT INTO order_by_carrier_id (
+                            o_w_id,
                             o_d_id,
                             o_carrier_id,
                             o_id,
@@ -69,14 +70,15 @@ def execute_t3(session, args_arr):
                           order.o_ol_cnt))
 
       #### check update of carrier_id is correct
-      chk = session.execute(f"""
-        SELECT * FROM order_by_carrier_id 
-        WHERE o_w_id=%s 
-        and o_d_id=%s 
-        and o_carrier_id=%s 
-        and o_id=%s LIMIT 1;""",
-        (order.o_w_id, order.o_d_id, new_carrier_id, order.o_id))[0]
-      print(chk)
+      # skipping check for benchmarking
+      # chk = session.execute(f"""
+      #   SELECT * FROM order_by_carrier_id 
+      #   WHERE o_w_id=%s 
+      #   and o_d_id=%s 
+      #   and o_carrier_id=%s 
+      #   and o_id=%s LIMIT 1;""",
+      #   (order.o_w_id, order.o_d_id, new_carrier_id, order.o_id))[0]
+      # print(chk)
 
       ##### update carrier_id in orders, which is a PK col
       session.execute(SimpleStatement(f"""
@@ -113,7 +115,6 @@ def execute_t3(session, args_arr):
 
       #### update order_line table
       # when queried with (ol_w_id, ol_d_id, ol_o_id), each rows return should have unique ol_number
-      print()
       order_lines = session.execute(f"""
           SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
           (w_id, d_id, order.o_id))
@@ -121,7 +122,7 @@ def execute_t3(session, args_arr):
       # note: order_lines is an iterator and will be exhausted. Only one iteration is allowed without duplicating it.
       ol_amount_total = Decimal(0)
       for r in order_lines:
-        print(r)
+        # print(r)
         ol_amount_total += r.ol_amount
 
         session.execute(f"""
@@ -136,27 +137,28 @@ def execute_t3(session, args_arr):
           (r.ol_w_id, r.ol_d_id, r.ol_o_id, r.ol_quantity, r.ol_number, r.ol_c_id))
         
       #### check order_lines correctly updated
-      print()
-      order_lines = session.execute(f"""
-        SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
-        (w_id, d_id, order.o_id))
-      for r in order_lines:
-        print(r)
+      # print()
+      # order_lines = session.execute(f"""
+      #   SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
+      #   (w_id, d_id, order.o_id))
+      # for r in order_lines:
+      #   print(r)
 
       #### update customer's C_BALANCE, C_DELIVERY_CNT via drop and insert
-      print('\ntotal', ol_amount_total)
+      # not expected to fail. `order` exists at this point.
       customer = session.execute(SimpleStatement(f"""
         SELECT * FROM customer 
         WHERE c_w_id={w_id} 
         and c_d_id={d_id} 
         and c_id={order.o_c_id};"""))[0]
-      print(customer)
+      # print(customer)
 
       session.execute(SimpleStatement(f"""
         DELETE FROM customer 
         WHERE c_w_id={w_id} 
         and c_d_id={d_id} 
         and c_id={order.o_c_id};"""))
+
       session.execute(f"""
         INSERT INTO customer (c_w_id, 
                               c_d_id, 
@@ -237,19 +239,18 @@ def execute_t3(session, args_arr):
 
 
       #### check customer updated
-      customer = session.execute(SimpleStatement(f"""SELECT * FROM customer WHERE c_w_id={w_id} and c_d_id={d_id} and c_id={order.o_c_id};"""))[0]
-      print(customer)
+      # customer = session.execute(SimpleStatement(f"""SELECT * FROM customer WHERE c_w_id={w_id} and c_d_id={d_id} and c_id={order.o_c_id};"""))[0]
+      # print(customer)
 
 
       #### O_CARRIER_ID duplicated in order_status table
-      print()
-      order_status_before = session.execute(f"""
-        SELECT * FROM order_status where O_W_ID=%s and O_D_ID=%s and O_C_ID=%s and O_ID=%s;""",
-        (w_id, d_id, order.o_c_id, order.o_id))[0]
-      print(order_status_before)
-      assert order_status_before.o_carrier_id == -1, f"Inconsistency detected? Trying to update null order_status carrier_id but it's already non-null" # ask
+      # order_status_before = session.execute(f"""
+      #   SELECT * FROM order_status where O_W_ID=%s and O_D_ID=%s and O_C_ID=%s and O_ID=%s;""",
+      #   (w_id, d_id, order.o_c_id, order.o_id))[0]
+      # print(order_status_before)
+      # assert order_status_before.o_carrier_id == -1, f"Inconsistency detected? Trying to update null order_status carrier_id but it's already non-null" # ask
 
-      # todo: only need to retain this UPDATE query. The ones before and after are for checking while developing
+      # Actual UPDATE query. The ones before and after are for checking while developing
       session.execute(f"""
         UPDATE order_status 
         SET o_carrier_id=%s 
@@ -259,7 +260,7 @@ def execute_t3(session, args_arr):
         and O_ID=%s;""",
         (new_carrier_id, w_id, d_id, order.o_c_id, order.o_id))
 
-      order_status_after = session.execute(f"""
-        SELECT * FROM order_status where O_W_ID=%s and O_D_ID=%s and O_C_ID=%s and O_ID=%s;""",
-        (w_id, d_id, order.o_c_id, order.o_id))[0]
-      print(order_status_after)
+      # order_status_after = session.execute(f"""
+      #   SELECT * FROM order_status where O_W_ID=%s and O_D_ID=%s and O_C_ID=%s and O_ID=%s;""",
+      #   (w_id, d_id, order.o_c_id, order.o_id))[0]
+      # print(order_status_after)
