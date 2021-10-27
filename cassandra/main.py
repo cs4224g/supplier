@@ -42,7 +42,7 @@ if __name__ == '__main__':
         input_arr = line.split(",")
         xact = input_arr[0].strip()
 
-        print(f'{line} | Xact {num_xacts+1}')
+        print(f'{line.strip()} | Xact {num_xacts+1}')
         start_time = time.time()
         
         if(xact == 'N'):
