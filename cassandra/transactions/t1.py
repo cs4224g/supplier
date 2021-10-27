@@ -14,7 +14,7 @@ def get_items(num_items):
   return items
 
 def execute_t1(session, args_arr):
-  print("T1 New Order Transaction called!\n----------------------")
+  print("T1 New Order Transaction called!")
   # print(args_arr)
 
   ####################### extract query inputs    
@@ -32,7 +32,6 @@ def execute_t1(session, args_arr):
   # print()
   next_o_id = district.d_next_o_id
 
-  # todo: uncomment after testing
   session.execute(f"""UPDATE district SET D_NEXT_O_ID={next_o_id + 1} WHERE d_w_id={w_id} AND d_id={d_id}""")
 
   # check if next_o_id updated
@@ -108,6 +107,8 @@ def execute_t1(session, args_arr):
 
   for i, tup in enumerate(items):
     ol_i_id, ol_supply_w_id, ol_quantity = tup
+
+    # shouldn't fail. The no new item i_ids are created during the program
     stocks = session.execute(f"""SELECT * FROM stock WHERE S_W_ID={ol_supply_w_id} AND S_I_ID={ol_i_id};""")
     stock = stocks[0]
     # print(stock)
@@ -164,24 +165,6 @@ def execute_t1(session, args_arr):
         stock.s_dist_10,
         stock.s_data
       ))
-    # session.execute(f"""
-    # UPDATE stock SET 
-    #   s_quantity=%s, 
-    #   s_ytd=%s,
-    #   s_order_cnt=%s,
-    #   s_remote_cnt=%s
-    # WHERE s_w_id=%s
-    #   AND s_i_id=%s
-    #   AND s_quantity=%s;""", 
-    # (
-    #   adj_qty, 
-    #   stock.s_ytd + ol_quantity,
-    #   stock.s_order_cnt + 1,
-    #   stock.s_remote_cnt + (1 if ol_supply_w_id != w_id else 0),
-    #   ol_supply_w_id,
-    #   ol_i_id,
-    #   stock.s_quantity
-    # ))
 
     item_infos = session.execute(f"""SELECT * FROM item WHERE i_id={ol_i_id}""")
     item_info = item_infos[0]
@@ -196,6 +179,8 @@ def execute_t1(session, args_arr):
     # note: OL_DELIVERY_D needs to be created with null here (T1), set in T3, and queried
     # in T4. So we DON'T insert OL_DELIVERY_D for an implicit null (col doesn't exist).
     # Don't need special null value bc we are not querying "WHERE OL_DELIVERY_D IS NULL"
+
+    # print(f'insert into orderline',w_id, d_id,next_o_id,i+1)
     session.execute("""
       INSERT INTO order_line (
             OL_W_ID,
