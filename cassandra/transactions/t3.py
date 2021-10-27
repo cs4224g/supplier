@@ -1,11 +1,8 @@
 from cassandra.query import named_tuple_factory, SimpleStatement
 from decimal import Decimal
 
-# todo: remove all prints and queries for checking if updates are correctly applied before testing.
 def execute_t3(session, args_arr):
-    # D,2,8
     print("T3 Delivery Transaction called!")
-    # print(args_arr)
 
     ### extract query inputs    
     assert len(args_arr) == 3, "Wrong length of argments for T3"
@@ -119,10 +116,12 @@ def execute_t3(session, args_arr):
           SELECT * FROM order_line WHERE ol_w_id=%s AND ol_d_id=%s AND ol_o_id=%s;""",
           (w_id, d_id, order.o_id))
 
+      if not order_lines:
+        continue
+
       # note: order_lines is an iterator and will be exhausted. Only one iteration is allowed without duplicating it.
       ol_amount_total = Decimal(0)
       for r in order_lines:
-        # print(r)
         ol_amount_total += r.ol_amount
 
         session.execute(f"""
@@ -150,7 +149,10 @@ def execute_t3(session, args_arr):
         SELECT * FROM customer 
         WHERE c_w_id={w_id} 
         and c_d_id={d_id} 
-        and c_id={order.o_c_id};"""))[0]
+        and c_id={order.o_c_id};"""))
+      if not customer:
+        continue
+      customer = customer[0]
       # print(customer)
 
       session.execute(SimpleStatement(f"""
