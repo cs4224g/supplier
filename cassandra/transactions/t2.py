@@ -35,8 +35,7 @@ def execute_t2(session, args_arr):
 
     # update only if data hasn't changed since we queried warehouse
     upd_warehouse = SimpleStatement(f"""UPDATE warehouse SET w_ytd={ret_warehouse.w_ytd + payment} 
-                                        WHERE w_id={c_w_id} 
-                                        IF w_ytd={ret_warehouse.w_ytd};""")
+                                        WHERE w_id={c_w_id};""")
 
     response = session.execute(upd_warehouse)
     if not response:
