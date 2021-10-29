@@ -25,7 +25,7 @@ def execute_t1(session, args_arr):
 
   districts = session.execute(f"""SELECT * FROM district WHERE d_w_id={w_id} AND d_id={d_id};""")
   if not districts:
-    return
+    return 1
   district = districts[0]
   next_o_id = district.d_next_o_id
 
@@ -37,7 +37,7 @@ def execute_t1(session, args_arr):
 
   customers = session.execute(f"""SELECT * FROM customer WHERE C_W_ID={w_id} AND C_D_ID={d_id} AND C_ID={c_id};""")
   if not customers:
-    return
+    return 1
   customer = customers[0]
 
   is_all_local = len(list(filter(lambda tw: tw != w_id, [t[1] for t in items]))) == 0
@@ -109,7 +109,7 @@ def execute_t1(session, args_arr):
 
     stocks = session.execute(f"""SELECT * FROM stock WHERE S_W_ID={ol_supply_w_id} AND S_I_ID={ol_i_id};""")
     if not stocks:
-      return
+      return 1
     stock = stocks[0]
     # print(stock)
     
@@ -172,7 +172,7 @@ def execute_t1(session, args_arr):
 
     item_infos = session.execute(f"""SELECT * FROM item WHERE i_id={ol_i_id}""")
     if not item_infos:
-      return
+      return 1
     item_info = item_infos[0]
     price = item_info.i_price
     item_amount = ol_quantity * price
@@ -281,7 +281,7 @@ def execute_t1(session, args_arr):
   d_tax = district.d_tax
   warehouses = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")
   if not warehouses:
-    return
+    return 1
   warehouse = warehouses[0]
   w_tax = warehouse.w_tax
   total_amount *= (1 + d_tax + w_tax) * (1 - customer.c_discount)
@@ -297,4 +297,6 @@ def execute_t1(session, args_arr):
   print(num_items, total_amount)
   for i in range(num_items):
     print(items[i][0], item_names[i], items[i][1], items[i][2], item_amounts[i], remaining_qtys[i])
+  
+  return 0
 
