@@ -27,7 +27,7 @@ def execute_t3(session, args_arr):
         (w_id, d_id, -1))
       if not orders:
         # print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
-        return_code = 1
+        # does not count as failed query bc could be that district has no orders with carrier_id == -1
         continue
       order = orders[0]
       # print(order)
