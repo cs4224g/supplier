@@ -12,23 +12,26 @@ def process_input(user_input):
 
 def perform_transaction(session):
     session.row_factory = named_tuple_factory
-    query_next_order_id = SimpleStatement(
+    query_next_order_id = session.execute(SimpleStatement(
         f'SELECT D_NEXT_O_ID \
         FROM wholesale_supplier.district \
-        WHERE D_W_ID = {w_id} AND D_ID = {d_id}')
-    max_order_id = session.execute(query_next_order_id)[0].d_next_o_id
+        WHERE D_W_ID = {w_id} AND D_ID = {d_id}'))
+    if not query_next_order_id:
+        return 1
+    max_order_id = query_next_order_id[0].d_next_o_id
     min_order_id = max_order_id - int(no_last_orders)
 
-    query_last_orders = SimpleStatement(
+    query_last_orders = session.execute(SimpleStatement(
         f'SELECT OL_O_ID, OL_O_ENTRY_D, OL_C_FIRST, OL_C_MIDDLE, OL_C_LAST, OL_C_ID \
         FROM wholesale_supplier.order_line \
         WHERE OL_W_ID = {w_id} AND OL_D_ID = {d_id} \
-        AND OL_O_ID < {max_order_id} AND OL_O_ID >= {min_order_id}')
-    last_orders = session.execute(query_last_orders)
+        AND OL_O_ID < {max_order_id} AND OL_O_ID >= {min_order_id}'))
+    if not query_last_orders:
+        return 1
 
     order_ids = set()
 
-    for last_order in last_orders:
+    for last_order in query_last_orders:
         print(last_order.ol_o_id, last_order.ol_o_entry_d)
         print(last_order.ol_c_first, last_order.ol_c_middle, last_order.ol_c_last)
         order_ids.add(last_order.ol_o_id)
@@ -40,27 +43,33 @@ def perform_transaction(session):
     popular_items = {}
  
     for order_id in order_ids:
-        query_max_quantity_orderline = SimpleStatement(
+        query_max_quantity_orderline = session.execute(SimpleStatement(
             f'SELECT MAX(OL_QUANTITY) \
             FROM wholesale_supplier.order_line \
             WHERE OL_W_ID = {w_id} AND OL_D_ID = {d_id} \
-            AND OL_O_ID  = {order_id}')
-        max_quantity = session.execute(query_max_quantity_orderline)[0].system_max_ol_quantity
-        query_popular_item  = SimpleStatement(
+            AND OL_O_ID  = {order_id}'))
+        if not query_max_quantity_orderline:
+            return 1
+        max_quantity = query_max_quantity_orderline[0].system_max_ol_quantity
+        query_popular_item  = session.execute(SimpleStatement(
             f'SELECT OL_I_NAME, OL_I_ID, OL_QUANTITY \
             FROM wholesale_supplier.order_line WHERE OL_W_ID = {w_id} AND OL_D_ID = {d_id} \
-            AND OL_O_ID = {order_id} AND OL_QUANTITY = {max_quantity}')
-        item = session.execute(query_popular_item)[0]
+            AND OL_O_ID = {order_id} AND OL_QUANTITY = {max_quantity}'))
+        if not query_popular_item:
+            return 1
+        item = query_popular_item[0]
         items[item.ol_i_id] = item.ol_i_name
         popular_items[item.ol_i_id] = 0
     
     for item_id in items:
-        query_popular_items = SimpleStatement(
+        query_popular_items = session.execute(SimpleStatement(
             f'SELECT COUNT(OL_O_ID) \
             FROM wholesale_supplier.order_line_by_item WHERE  OL_I_ID = {item_id} \
             AND OL_W_ID = {w_id} AND OL_D_ID = {d_id} \
-            AND OL_O_ID < {max_order_id} AND OL_O_ID >= {min_order_id}')
-        order_count_for_item = session.execute(query_popular_items)[0].system_count_ol_o_id
+            AND OL_O_ID < {max_order_id} AND OL_O_ID >= {min_order_id}'))
+        if not query_popular_items:
+            return 1
+        order_count_for_item = query_popular_items[0].system_count_ol_o_id
         popular_items[item_id] = order_count_for_item
     
     for item_id in popular_items:
@@ -73,6 +82,7 @@ def execute_t6(session_input, user_input):
     print("T6 program was called!")
     process_input(user_input)
     perform_transaction(session_input)
+    return 0
 
 def format_list(items):
     res = '('

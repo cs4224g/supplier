@@ -38,6 +38,9 @@ if __name__ == '__main__':
 
     num_xacts = 0
     total_exec_time = 0 # in seconds
+    failure_count_t4 = 0
+    failure_count_t5 = 0
+    failure_count_t6 = 0
 
     for line in sys.stdin:
         input_arr = line.split(",")
@@ -53,16 +56,15 @@ if __name__ == '__main__':
         elif(xact == 'D'):
             execute_t3(session, input_arr)
         elif (xact == 'O'):
-            execute_t4(session, line)
+            failure_count_t4 = failure_count_t4 + execute_t4(session, line)
         elif (xact == 'S'):
-            execute_t5(session, line)
+            failure_count_t5 = failure_count_t5 + execute_t5(session, line)
         elif (xact == 'I'):
-            execute_t6(session, line)
+            failure_count_t6 = failure_count_t6 + execute_t6(session, line)
         elif (xact == 'T'):
             execute_t7(session)
         elif (xact == 'R'):
             execute_t8(session, line)
-
         else:
             print('fall thru', xact)
 
@@ -96,6 +98,13 @@ if __name__ == '__main__':
     )
     print(metrics, file=sys.stderr)
 
+    print("Total failures: ")
+    print(f'T4: {failure_count_t4}')
+    print(f'T5: {failure_count_t5}')
+    print(f'T5: {failure_count_t6}')
+    
+
+    print("Average transaction latency: ")
     for xact_num in range(1,9):
         total_time = xact_latency[xact_num][1]
         total_count = xact_latency[xact_num][0]
