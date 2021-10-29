@@ -38,6 +38,17 @@ if __name__ == '__main__':
 
     num_xacts = 0
     total_exec_time = 0 # in seconds
+
+    xact_count_t1 = 0
+    xact_count_t2 = 0
+    xact_count_t3 = 0
+    xact_count_t4 = 0
+    xact_count_t5 = 0
+    xact_count_t6 = 0
+
+    failure_count_t1 = 0
+    failure_count_t2 = 0
+    failure_count_t3 = 0
     failure_count_t4 = 0
     failure_count_t5 = 0
     failure_count_t6 = 0
@@ -50,17 +61,23 @@ if __name__ == '__main__':
         start_time = time.time()
         
         if(xact == 'N'):
-            execute_t1(session, input_arr)
+            failure_count_t1 += execute_t1(session, input_arr)
+            xact_count_t1 += 1
         elif(xact == 'P'):
-            execute_t2(session, input_arr)
+            failure_count_t2 += execute_t2(session, input_arr)
+            xact_count_t2 += 1
         elif(xact == 'D'):
-            execute_t3(session, input_arr)
+            failure_count_t3 += execute_t3(session, input_arr)
+            xact_count_t3 += 1
         elif (xact == 'O'):
-            failure_count_t4 = failure_count_t4 + execute_t4(session, line)
+            failure_count_t4 += execute_t4(session, line)
+            xact_count_t4 += 1
         elif (xact == 'S'):
-            failure_count_t5 = failure_count_t5 + execute_t5(session, line)
+            failure_count_t5 += execute_t5(session, line)
+            xact_count_t5 += 1
         elif (xact == 'I'):
-            failure_count_t6 = failure_count_t6 + execute_t6(session, line)
+            failure_count_t6 += execute_t6(session, line)
+            xact_count_t6 += 1
         elif (xact == 'T'):
             execute_t7(session)
         elif (xact == 'R'):
@@ -99,9 +116,12 @@ if __name__ == '__main__':
     print(metrics, file=sys.stderr)
 
     print("Total failures: ")
-    print(f'T4: {failure_count_t4}')
-    print(f'T5: {failure_count_t5}')
-    print(f'T5: {failure_count_t6}')
+    print(f'T1: {failure_count_t1}/{xact_count_t1}')
+    print(f'T2: {failure_count_t2}/{xact_count_t2}')
+    print(f'T3: {failure_count_t3}/{xact_count_t3}')
+    print(f'T4: {failure_count_t4}/{xact_count_t4}')
+    print(f'T5: {failure_count_t5}/{xact_count_t5}')
+    print(f'T5: {failure_count_t6}/{xact_count_t6}')
     
 
     print("Average transaction latency: ")
