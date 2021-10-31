@@ -16,7 +16,8 @@ def execute_t3(session, args_arr):
       - C_BALANCE,      in tables: customer, top_balance
       - C_DELIVERY_CNT, in tables: customer
     """
-    
+    return_code = 0 # default success
+
     for d_id in range(1, 11): # [1..10]
       # Orders table: (o_w_id, o_d_id, o_id) uniquely identify row
       # So given (o_w_id, o_d_id), each o_id returned should be unique
@@ -26,6 +27,7 @@ def execute_t3(session, args_arr):
         (w_id, d_id, -1))
       if not orders:
         # print(f'No null carrier_id exists for w={w_id}, d={d_id}, skipping to next district.')
+        # does not count as failed query bc could be that district has no orders with carrier_id == -1
         continue
       order = orders[0]
       # print(order)
@@ -121,6 +123,7 @@ def execute_t3(session, args_arr):
           (w_id, d_id, order.o_id))
       
       if not order_lines:
+        return_code = 1
         continue
 
       # note: order_lines is an iterator and will be exhausted. Only one iteration is allowed without duplicating it.
@@ -155,6 +158,7 @@ def execute_t3(session, args_arr):
         and c_d_id={d_id} 
         and c_id={order.o_c_id};"""))
       if not customer:
+        return_code = 1
         continue
       customer = customer[0]
       # print(customer)
@@ -275,3 +279,5 @@ def execute_t3(session, args_arr):
       #   SELECT * FROM order_status where O_W_ID=%s and O_D_ID=%s and O_C_ID=%s and O_ID=%s;""",
       #   (w_id, d_id, order.o_c_id, order.o_id))[0]
       # print(order_status_after)
+
+      return return_code
