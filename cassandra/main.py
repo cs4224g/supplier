@@ -26,7 +26,8 @@ xact_map = {
     "R":8
 }
 
-xact_latency = [[0,0] for i in range(9)]
+# maps xact num to [total_xact_cnt, total_exec_time, failed_xact_cnt]
+xact_info = [[0,0] for i in range(9)]
 latencies = []
 
 if __name__ == '__main__':
@@ -38,13 +39,6 @@ if __name__ == '__main__':
 
     num_xacts = 0
     total_exec_time = 0 # in seconds
-
-    xact_count_t1 = 0
-    xact_count_t2 = 0
-    xact_count_t3 = 0
-    xact_count_t4 = 0
-    xact_count_t5 = 0
-    xact_count_t6 = 0
 
     failure_count_t1 = 0
     failure_count_t2 = 0
@@ -62,22 +56,16 @@ if __name__ == '__main__':
         
         if(xact == 'N'):
             failure_count_t1 += execute_t1(session, input_arr)
-            xact_count_t1 += 1
         elif(xact == 'P'):
             failure_count_t2 += execute_t2(session, input_arr)
-            xact_count_t2 += 1
         elif(xact == 'D'):
             failure_count_t3 += execute_t3(session, input_arr)
-            xact_count_t3 += 1
         elif (xact == 'O'):
             failure_count_t4 += execute_t4(session, line)
-            xact_count_t4 += 1
         elif (xact == 'S'):
             failure_count_t5 += execute_t5(session, line)
-            xact_count_t5 += 1
         elif (xact == 'I'):
             failure_count_t6 += execute_t6(session, line)
-            xact_count_t6 += 1
         elif (xact == 'T'):
             execute_t7(session)
         elif (xact == 'R'):
@@ -93,8 +81,8 @@ if __name__ == '__main__':
 
         # Transaction-specific latencies
         xact_num = xact_map[xact]
-        xact_latency[xact_num][0] += 1
-        xact_latency[xact_num][1] += latency_seconds
+        xact_info[xact_num][0] += 1
+        xact_info[xact_num][1] += latency_seconds
 
     cluster.shutdown()
 
@@ -116,18 +104,18 @@ if __name__ == '__main__':
     print(metrics, file=sys.stderr)
 
     print("Total failures: ")
-    print(f'T1: {failure_count_t1}/{xact_count_t1}')
-    print(f'T2: {failure_count_t2}/{xact_count_t2}')
-    print(f'T3: {failure_count_t3}/{xact_count_t3}')
-    print(f'T4: {failure_count_t4}/{xact_count_t4}')
-    print(f'T5: {failure_count_t5}/{xact_count_t5}')
-    print(f'T5: {failure_count_t6}/{xact_count_t6}')
+    print(f'T1: {failure_count_t1}/{xact_info[1][0]}')
+    print(f'T2: {failure_count_t2}/{xact_info[2][0]}')
+    print(f'T3: {failure_count_t3}/{xact_info[3][0]}')
+    print(f'T4: {failure_count_t4}/{xact_info[4][0]}')
+    print(f'T5: {failure_count_t5}/{xact_info[5][0]}')
+    print(f'T5: {failure_count_t6}/{xact_info[6][0]}')
     
 
     print("Average transaction latency: ")
     for xact_num in range(1,9):
-        total_time = xact_latency[xact_num][1]
-        total_count = xact_latency[xact_num][0]
+        total_time = xact_info[xact_num][1]
+        total_count = xact_info[xact_num][0]
         xact_avg_latency = total_time / total_count if total_count > 0 else Inf
         xact_metric = f'T{xact_num}: {xact_avg_latency}s'
         print(xact_metric)

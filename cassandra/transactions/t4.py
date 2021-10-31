@@ -44,6 +44,8 @@ def perform_transaction(session):
     else:
         return 1
 
+    return 0
+
 def execute_t4(session_input, user_input):
     print("T4 program was called!")
     process_input(user_input)

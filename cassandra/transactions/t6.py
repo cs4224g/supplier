@@ -77,6 +77,8 @@ def perform_transaction(session):
         item_name = items[item_id]
         percentage_of_orders_with_popular_items = (item_count/order_count) * 100
         print(item_name, percentage_of_orders_with_popular_items)
+
+    return 0
     
 def execute_t6(session_input, user_input):
     print("T6 program was called!")

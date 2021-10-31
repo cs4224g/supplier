@@ -48,6 +48,7 @@ def perform_transaction(session):
         return 1
     items_count = query_items_stock_below_threshold
     print(f'{items_count[0].count}')
+    return 0
 
 def execute_t5(session_input, user_input):
     print("T5 program was called!")
