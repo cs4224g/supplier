@@ -1,10 +1,8 @@
-from cassandra.query import named_tuple_factory, SimpleStatement
+from cassandra.query import BatchStatement, named_tuple_factory, SimpleStatement
 from decimal import Decimal
 
 def execute_t2(session, args_arr):
-    # P,1,1,2203,3261.87
     print("T2 Payment Transaction called!")
-    print(args_arr)
 
     # extract query inputs    
     assert len(args_arr) == 5, "Wrong length of argments for T2"
@@ -15,32 +13,48 @@ def execute_t2(session, args_arr):
 
     # session.row_factory = named_tuple_factory # seems like this is the default already
     query_warehouse = SimpleStatement(f"""SELECT * FROM warehouse WHERE w_id={c_w_id};""")
-    ret_warehouse = session.execute(query_warehouse)[0]
-    print('warehouse: ', ret_warehouse)
+    ret_warehouse_res = session.execute(query_warehouse)
+    if not ret_warehouse_res:
+      return
+    ret_warehouse = ret_warehouse_res[0]
+    # print('warehouse: ', ret_warehouse)
 
     query_district = SimpleStatement(f"""SELECT * FROM district WHERE d_w_id={c_w_id} and d_id={c_d_id};""")
-    ret_district = session.execute(query_district)[0]
-    print('district: ', ret_district)
+    ret_district_res = session.execute(query_district)
+    if not ret_district_res:
+      return
+    ret_district = ret_district_res[0]
+    # print('district: ', ret_district)
 
     query_customer = SimpleStatement(f"""SELECT * FROM customer WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};""")
-    ret_customer = session.execute(query_customer)[0]
-    print('customer: ', ret_customer)
+    ret_customer_res = session.execute(query_customer)
+    if not ret_customer_res:
+      return
+    ret_customer = ret_customer_res[0]
+    # print('customer: ', ret_customer)
 
     # update only if data hasn't changed since we queried warehouse
     upd_warehouse = SimpleStatement(f"""UPDATE warehouse SET w_ytd={ret_warehouse.w_ytd + payment} 
-                                        WHERE w_id={c_w_id} 
-                                        IF w_ytd={ret_warehouse.w_ytd};""")
-                                        
+                                        WHERE w_id={c_w_id};""")
+
+    response = session.execute(upd_warehouse)
+    if not response:
+      # update failed, silently returning
+      return
     # only if the first upd succeeds, trigger the rest
-    if session.execute(upd_warehouse)[0].applied:
+    if response[0].applied:
         upd_district = SimpleStatement(f"""UPDATE district SET d_ytd={ret_district.d_ytd + payment} 
                                         WHERE d_w_id={c_w_id} AND d_id={c_d_id};""")
         session.execute(upd_district)
 
-        session.execute(SimpleStatement(f"""DELETE FROM customer 
-                                            WHERE c_w_id={c_w_id} and c_d_id={c_d_id} and c_id={c_id};"""))
-        # literal quoting below; doesn't escape timestamps properly
-        session.execute(f"""
+        batch = BatchStatement()
+        batch.add(SimpleStatement(f"""
+          DELETE FROM customer 
+          WHERE c_w_id={c_w_id} 
+          and c_d_id={c_d_id} 
+          and c_id={c_id};"""))
+
+        batch.add(SimpleStatement(f"""
         INSERT INTO customer (c_w_id, 
                               c_d_id, 
                               c_id, 
@@ -64,8 +78,8 @@ def execute_t2(session, args_arr):
                               c_w_name,
                               c_ytd_payment,
                               c_zip) 
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                            (ret_customer.c_w_id, 
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                             (ret_customer.c_w_id, 
                               ret_customer.c_d_id, 
                               ret_customer.c_id, 
                               ret_customer.c_balance - payment, 
@@ -89,16 +103,20 @@ def execute_t2(session, args_arr):
                               ret_customer.c_ytd_payment + float(payment),
                               ret_customer.c_zip))
         
+        session.execute(batch)
+        
         # c_balance is duplicated in top_balance
         # c_balance is PK col in top_balance table, need to delete and reinsert updated row
-        session.execute(SimpleStatement(f"""
+        
+        batch = BatchStatement()
+        batch.add(SimpleStatement(f"""
           DELETE FROM top_balance 
           WHERE c_w_id={c_w_id} 
           and c_d_id={c_d_id} 
           and c_balance={ret_customer.c_balance} 
           and c_id={c_id};"""))
-        
-        session.execute(f"""
+
+        batch.add(SimpleStatement(f"""
           INSERT INTO top_balance (c_w_id,
                                    c_d_id,
                                    c_balance,
@@ -108,8 +126,8 @@ def execute_t2(session, args_arr):
                                    c_last,
                                    c_middle,
                                    c_w_name) 
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
-                            (ret_customer.c_w_id, 
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                             (ret_customer.c_w_id, 
                               ret_customer.c_d_id, 
                               ret_customer.c_balance - payment, 
                               ret_customer.c_id, 
@@ -118,9 +136,10 @@ def execute_t2(session, args_arr):
                               ret_customer.c_last,
                               ret_customer.c_middle,
                               ret_customer.c_w_name))
+        session.execute(batch)
 
         # print required info; printing updated values
-        print('--------------------')
+        # print('--------------------')
         # ret_customer is before the update. 
         print(ret_customer.c_w_id, ret_customer.c_d_id, ret_customer.c_id, ret_customer.c_first, 
             ret_customer.c_middle, ret_customer.c_last, ret_customer.c_street_1, ret_customer.c_street_2, ret_customer.c_city, 

@@ -1,6 +1,5 @@
 import sys
-
-from cassandra.query import named_tuple_factory, SimpleStatement
+from cassandra.query import BatchStatement, SimpleStatement
 from decimal import Decimal
 from datetime import datetime
 
@@ -14,8 +13,7 @@ def get_items(num_items):
   return items
 
 def execute_t1(session, args_arr):
-  print("T1 New Order Transaction called!\n----------------------")
-  # print(args_arr)
+  print("T1 New Order Transaction called!")
 
   ####################### extract query inputs    
   assert len(args_arr) == 5, "Wrong length of argments for T1"
@@ -24,15 +22,13 @@ def execute_t1(session, args_arr):
   d_id = int(args_arr[3])
   num_items = int(args_arr[4])
   items = get_items(num_items)
-  # print(items)
 
   districts = session.execute(f"""SELECT * FROM district WHERE d_w_id={w_id} AND d_id={d_id};""")
+  if not districts:
+    return
   district = districts[0]
-  # print(district)
-  # print()
   next_o_id = district.d_next_o_id
 
-  # todo: uncomment after testing
   session.execute(f"""UPDATE district SET D_NEXT_O_ID={next_o_id + 1} WHERE d_w_id={w_id} AND d_id={d_id}""")
 
   # check if next_o_id updated
@@ -40,6 +36,8 @@ def execute_t1(session, args_arr):
   # print(district[0])
 
   customers = session.execute(f"""SELECT * FROM customer WHERE C_W_ID={w_id} AND C_D_ID={d_id} AND C_ID={c_id};""")
+  if not customers:
+    return
   customer = customers[0]
 
   is_all_local = len(list(filter(lambda tw: tw != w_id, [t[1] for t in items]))) == 0
@@ -108,7 +106,10 @@ def execute_t1(session, args_arr):
 
   for i, tup in enumerate(items):
     ol_i_id, ol_supply_w_id, ol_quantity = tup
+
     stocks = session.execute(f"""SELECT * FROM stock WHERE S_W_ID={ol_supply_w_id} AND S_I_ID={ol_i_id};""")
+    if not stocks:
+      return
     stock = stocks[0]
     # print(stock)
     
@@ -117,15 +118,17 @@ def execute_t1(session, args_arr):
     if adj_qty < 10:
       adj_qty += 100
     remaining_qtys.append(adj_qty)
+
     # with addition of S_QUANTITY to PK of stock, must delete and reinsert to update
-    session.execute(f"""
+    batch = BatchStatement()
+    batch.add(SimpleStatement(f"""
       DELETE from stock 
       WHERE s_w_id=%s
       AND s_i_id=%s
       AND s_quantity=%s;
-    """, (ol_supply_w_id, ol_i_id, stock.s_quantity))
+    """), (ol_supply_w_id, ol_i_id, stock.s_quantity))
 
-    session.execute("""
+    batch.add(SimpleStatement(f"""
       INSERT INTO stock (
         S_W_ID,
         S_I_ID,
@@ -144,7 +147,7 @@ def execute_t1(session, args_arr):
         S_DIST_09,
         S_DIST_10,
         S_DATA
-      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""", 
+      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"""), 
       (
         stock.s_w_id,
         stock.s_i_id,
@@ -164,28 +167,13 @@ def execute_t1(session, args_arr):
         stock.s_dist_10,
         stock.s_data
       ))
-    # session.execute(f"""
-    # UPDATE stock SET 
-    #   s_quantity=%s, 
-    #   s_ytd=%s,
-    #   s_order_cnt=%s,
-    #   s_remote_cnt=%s
-    # WHERE s_w_id=%s
-    #   AND s_i_id=%s
-    #   AND s_quantity=%s;""", 
-    # (
-    #   adj_qty, 
-    #   stock.s_ytd + ol_quantity,
-    #   stock.s_order_cnt + 1,
-    #   stock.s_remote_cnt + (1 if ol_supply_w_id != w_id else 0),
-    #   ol_supply_w_id,
-    #   ol_i_id,
-    #   stock.s_quantity
-    # ))
+    session.execute(batch)
+    
 
     item_infos = session.execute(f"""SELECT * FROM item WHERE i_id={ol_i_id}""")
+    if not item_infos:
+      return
     item_info = item_infos[0]
-    # print(item_info)
     price = item_info.i_price
     item_amount = ol_quantity * price
     total_amount += item_amount
@@ -196,6 +184,8 @@ def execute_t1(session, args_arr):
     # note: OL_DELIVERY_D needs to be created with null here (T1), set in T3, and queried
     # in T4. So we DON'T insert OL_DELIVERY_D for an implicit null (col doesn't exist).
     # Don't need special null value bc we are not querying "WHERE OL_DELIVERY_D IS NULL"
+
+    # print(f'insert into orderline',w_id, d_id,next_o_id,i+1)
     session.execute("""
       INSERT INTO order_line (
             OL_W_ID,
@@ -209,9 +199,13 @@ def execute_t1(session, args_arr):
             OL_DIST_INFO,
             OL_I_NAME,
             OL_I_PRICE,
-            OL_C_ID
+            OL_C_ID,
+            OL_C_FIRST,
+            OL_C_MIDDLE,
+            OL_C_LAST,
+            OL_O_ENTRY_D
           ) 
-      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", 
+      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, toTimestamp(Now()));""", 
         (
           w_id,
           d_id,
@@ -224,7 +218,10 @@ def execute_t1(session, args_arr):
           stock[2 + d_id],  # note: if schema of stocks changes, the index of S_DIST_XX will change too!
           item_info.i_name,
           item_info.i_price,
-          c_id
+          c_id,
+          customer.c_first,
+          customer.c_last,
+          customer.c_middle,
         ))
     
     # Create new order_line in 3 duplicate order_line tables too.
@@ -282,7 +279,10 @@ def execute_t1(session, args_arr):
   
   # print('bef', total_amount)
   d_tax = district.d_tax
-  warehouse = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")[0]
+  warehouses = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")
+  if not warehouses:
+    return
+  warehouse = warehouses[0]
   w_tax = warehouse.w_tax
   total_amount *= (1 + d_tax + w_tax) * (1 - customer.c_discount)
   # print(d_tax)

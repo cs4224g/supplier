@@ -77,7 +77,7 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
             # get ADJUSTED_QTY
             cur.execute(
                 "SELECT S_QUANTITY FROM proj.stock WHERE S_W_ID = %s AND S_I_ID = %s", (
-                    ITEM_NUMBER[i], SUPPLIER_WAREHOUSE[i])
+                    SUPPLIER_WAREHOUSE[i], ITEM_NUMBER[i])
             )
             S_QUANTITY = cur.fetchone()[0]
             ADJUSTED_QTY = S_QUANTITY - QUANTITY[i]
@@ -93,7 +93,7 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
             # get item amount
             cur.execute(
                 "SELECT I_NAME, I_PRICE FROM proj.item WHERE I_ID = %s", (
-                    str(ITEM_NUMBER[i]))
+                    [ITEM_NUMBER[i]])
             )
             item_info = cur.fetchone()
             I_NAME = item_info[0]
@@ -145,7 +145,7 @@ def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
         print(customer_info)
         # output warehouse address
         cur.execute(
-            "SELECT W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP FROM proj.warehouse WHERE W_ID = %s", str(C_W_ID))
+            "SELECT W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP FROM proj.warehouse WHERE W_ID = %s", [C_W_ID])
         warehouse_info = cur.fetchone()[0]
         print(warehouse_info)
         # output district address
