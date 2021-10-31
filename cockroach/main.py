@@ -4,21 +4,20 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from top_balance import top_balance
 from order_status import order_status
 
+
 def main():
     # file = open(file_path, 'r')
     # opt = parse_cmdline()
     # for line in file:
     #     if line == 'T':
     #         top_balance().execute(opt)
-    
+
     opt = parse_cmdline()
     print('starting')
     connection = psycopg2.connect(opt.dsn)
     print('connected succesfully')
     top_balance().execute(connection)
     order_status().execute(connection, '1', '1', '1')
-
-    
 
 
 def parse_cmdline():
