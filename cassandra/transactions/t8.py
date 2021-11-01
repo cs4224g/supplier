@@ -72,6 +72,7 @@ def execute_t8(session_input, user_input):
     print("T8 program was called!")
     process_input(user_input)
     perform_transaction(session_input)
+    return 0
 
 
 def format_list(items):

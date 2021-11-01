@@ -27,7 +27,7 @@ xact_map = {
 }
 
 # maps xact num to [total_xact_cnt, total_exec_time, failed_xact_cnt]
-xact_info = [[0,0] for i in range(9)]
+xact_info = [[0,0,0] for i in range(9)]
 latencies = []
 
 if __name__ == '__main__':
@@ -40,13 +40,6 @@ if __name__ == '__main__':
     num_xacts = 0
     total_exec_time = 0 # in seconds
 
-    failure_count_t1 = 0
-    failure_count_t2 = 0
-    failure_count_t3 = 0
-    failure_count_t4 = 0
-    failure_count_t5 = 0
-    failure_count_t6 = 0
-
     for line in sys.stdin:
         input_arr = line.split(",")
         xact = input_arr[0].strip()
@@ -54,28 +47,29 @@ if __name__ == '__main__':
         print(f'{line.strip()} | Xact {num_xacts+1}')
         start_time = time.time()
         
+        isFail = 0 # fail status
         if(xact == 'N'):
-            failure_count_t1 += execute_t1(session, input_arr)
+            isFail = execute_t1(session, input_arr)
         elif(xact == 'P'):
-            failure_count_t2 += execute_t2(session, input_arr)
+            isFail = execute_t2(session, input_arr)
         elif(xact == 'D'):
-            failure_count_t3 += execute_t3(session, input_arr)
+            isFail = execute_t3(session, input_arr)
         elif (xact == 'O'):
-            failure_count_t4 += execute_t4(session, line)
+            isFail = execute_t4(session, line)
         elif (xact == 'S'):
-            failure_count_t5 += execute_t5(session, line)
+            isFail = execute_t5(session, line)
         elif (xact == 'I'):
-            failure_count_t6 += execute_t6(session, line)
+            isFail = execute_t6(session, line)
         elif (xact == 'T'):
-            execute_t7(session)
+            isFail = execute_t7(session)
         elif (xact == 'R'):
-            execute_t8(session, line)
+            isFail = execute_t8(session, line)
         else:
             print('fall thru', xact)
 
         latency_seconds = time.time() - start_time
         total_exec_time += latency_seconds
-        num_xacts += 1
+        num_xacts += (1 - isFail)
         latencies.append(latency_seconds)
 
 
@@ -83,6 +77,7 @@ if __name__ == '__main__':
         xact_num = xact_map[xact]
         xact_info[xact_num][0] += 1
         xact_info[xact_num][1] += latency_seconds
+        xact_info[xact_num][2] += isFail
 
     cluster.shutdown()
 
@@ -104,12 +99,14 @@ if __name__ == '__main__':
     print(metrics, file=sys.stderr)
 
     print("Total failures: ")
-    print(f'T1: {failure_count_t1}/{xact_info[1][0]}')
-    print(f'T2: {failure_count_t2}/{xact_info[2][0]}')
-    print(f'T3: {failure_count_t3}/{xact_info[3][0]}')
-    print(f'T4: {failure_count_t4}/{xact_info[4][0]}')
-    print(f'T5: {failure_count_t5}/{xact_info[5][0]}')
-    print(f'T5: {failure_count_t6}/{xact_info[6][0]}')
+    print(f'T1: {xact_info[1][2]}/{xact_info[1][0]}')
+    print(f'T2: {xact_info[2][2]}/{xact_info[2][0]}')
+    print(f'T3: {xact_info[3][2]}/{xact_info[3][0]}')
+    print(f'T4: {xact_info[4][2]}/{xact_info[4][0]}')
+    print(f'T5: {xact_info[5][2]}/{xact_info[5][0]}')
+    print(f'T6: {xact_info[6][2]}/{xact_info[6][0]}')
+    print(f'T7: {xact_info[7][2]}/{xact_info[7][0]}')
+    print(f'T8: {xact_info[8][2]}/{xact_info[8][0]}')
     
 
     print("Average transaction latency: ")

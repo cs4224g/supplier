@@ -17,3 +17,4 @@ def perform_transaction(session):
 def execute_t7(session_input):
     print("T7 program was called!")
     perform_transaction(session_input)
+    return 0
