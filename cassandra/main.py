@@ -99,14 +99,8 @@ if __name__ == '__main__':
     print(metrics, file=sys.stderr)
 
     print("Total failures: ")
-    print(f'T1: {xact_info[1][2]}/{xact_info[1][0]}')
-    print(f'T2: {xact_info[2][2]}/{xact_info[2][0]}')
-    print(f'T3: {xact_info[3][2]}/{xact_info[3][0]}')
-    print(f'T4: {xact_info[4][2]}/{xact_info[4][0]}')
-    print(f'T5: {xact_info[5][2]}/{xact_info[5][0]}')
-    print(f'T6: {xact_info[6][2]}/{xact_info[6][0]}')
-    print(f'T7: {xact_info[7][2]}/{xact_info[7][0]}')
-    print(f'T8: {xact_info[8][2]}/{xact_info[8][0]}')
+    for i in range(1,9):
+        print(f'T{i}: {xact_info[i][2]}/{xact_info[i][0]}')
     
 
     print("Average transaction latency: ")
