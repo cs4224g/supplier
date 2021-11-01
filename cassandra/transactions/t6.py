@@ -40,6 +40,7 @@ def perform_transaction(session):
     print(order_count)
 
     items = {}
+    items_quantity = {}
     popular_items = {}
  
     for order_id in order_ids:
@@ -57,11 +58,16 @@ def perform_transaction(session):
             AND OL_O_ID = {order_id} AND OL_QUANTITY = {max_quantity}'))
         if not query_popular_item:
             return 1
-        item = query_popular_item[0]
-        items[item.ol_i_id] = item.ol_i_name
-        popular_items[item.ol_i_id] = 0
+        # there may be multiple popular items in an order
+        query_items = query_popular_item
+        for query_item in query_items:
+            items[query_item.ol_i_id] = query_item.ol_i_name
+            items_quantity[query_item.ol_i_id] = query_item.ol_quantity
+            popular_items[query_item.ol_i_id] = 0
+
     
     for item_id in items:
+        print(items[item_id], items_quantity[item_id])
         query_popular_items = session.execute(SimpleStatement(
             f'SELECT COUNT(OL_O_ID) \
             FROM wholesale_supplier.order_line_by_item WHERE  OL_I_ID = {item_id} \

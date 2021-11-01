@@ -1,8 +1,15 @@
-import numpy as np
-import pandas as pd
+import csv
+import statistics
 
-if __name__ == '__main__':
-    stats = pd.read_csv('client.csv',dtype=str)
-    throughput = stats['measurement_c'].astype(float)
-    output = pd.DataFrame([[np.amax(throughput), np.amin(throughput), np.average(throughput)]], columns=['min_throughput', 'max_throughput', 'avg_throughput'])
-    output.to_csv('throughput.csv', index=False)
+with open('client.csv') as stats:
+    csv_reader = csv.reader(stats, delimiter=",")
+    throughput_list = []
+    for row in csv_reader:
+        throughput_list.append(float(row[3]))
+    throughput_stats = [max(throughput_list), min(throughput_list), statistics.mean(throughput_list)]
+
+with open('throughput.csv', 'w+') as throughput:
+    csv_writer = csv.writer(throughput, delimiter=",")
+    csv_writer.writerow(throughput_stats)
+
+
