@@ -36,7 +36,6 @@ def perform_transaction(session):
     retrieved_item_ids = set()
     for row in query_last_orders:
         retrieved_item_ids.add(row.ol_i_id)
-    print(len(retrieved_item_ids))
     
     query_items_stock_below_threshold = session.execute(SimpleStatement(
         f'SELECT COUNT(*)\
