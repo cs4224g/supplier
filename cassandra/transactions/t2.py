@@ -1,3 +1,4 @@
+import time
 from cassandra.query import BatchStatement, named_tuple_factory, SimpleStatement
 from decimal import Decimal
 
@@ -43,9 +44,11 @@ def execute_t2(session, args_arr):
                                     WHERE d_w_id={c_w_id} AND d_id={c_d_id};""")
     session.execute(upd_district)
 
+    ts = int(time.time() * 10e6)
     batch = BatchStatement()
     batch.add(SimpleStatement(f"""
       DELETE FROM customer 
+      USING TIMESTAMP {ts}
       WHERE c_w_id={c_w_id} 
       and c_d_id={c_d_id} 
       and c_id={c_id};"""))
@@ -74,7 +77,8 @@ def execute_t2(session, args_arr):
                           c_w_name,
                           c_ytd_payment,
                           c_zip) 
-                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                  USING TIMESTAMP %s;"""), 
                           (ret_customer.c_w_id, 
                           ret_customer.c_d_id, 
                           ret_customer.c_id, 
@@ -97,16 +101,20 @@ def execute_t2(session, args_arr):
                           ret_customer.c_street_2,
                           ret_customer.c_w_name,
                           ret_customer.c_ytd_payment + float(payment),
-                          ret_customer.c_zip))
+                          ret_customer.c_zip,
+                          ts + 1 # so that this stmt is ran after the DELETE in this batch
+                          ))
     
     session.execute(batch)
     
     # c_balance is duplicated in top_balance
     # c_balance is PK col in top_balance table, need to delete and reinsert updated row
     
+    ts = int(time.time() * 10e6)
     batch = BatchStatement()
     batch.add(SimpleStatement(f"""
       DELETE FROM top_balance 
+      USING TIMESTAMP {ts}
       WHERE c_w_id={c_w_id} 
       and c_d_id={c_d_id} 
       and c_balance={ret_customer.c_balance} 
@@ -122,7 +130,8 @@ def execute_t2(session, args_arr):
                                 c_last,
                                 c_middle,
                                 c_w_name) 
-                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                  USING TIMESTAMP %s;"""), 
                           (ret_customer.c_w_id, 
                           ret_customer.c_d_id, 
                           ret_customer.c_balance - payment, 
@@ -131,7 +140,8 @@ def execute_t2(session, args_arr):
                           ret_customer.c_first,
                           ret_customer.c_last,
                           ret_customer.c_middle,
-                          ret_customer.c_w_name))
+                          ret_customer.c_w_name,
+                          ts + 1))
     session.execute(batch)
 
     # print required info; printing updated values

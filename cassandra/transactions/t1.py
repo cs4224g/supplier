@@ -1,4 +1,5 @@
 import sys
+import time
 from cassandra.query import BatchStatement, SimpleStatement
 from decimal import Decimal
 from datetime import datetime
@@ -120,9 +121,11 @@ def execute_t1(session, args_arr):
     remaining_qtys.append(adj_qty)
 
     # with addition of S_QUANTITY to PK of stock, must delete and reinsert to update
+    ts = int(time.time() * 10e6)
     batch = BatchStatement()
     batch.add(SimpleStatement(f"""
       DELETE from stock 
+      USING TIMESTAMP {ts}
       WHERE s_w_id=%s
       AND s_i_id=%s
       AND s_quantity=%s;
@@ -147,7 +150,8 @@ def execute_t1(session, args_arr):
         S_DIST_09,
         S_DIST_10,
         S_DATA
-      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"""), 
+      ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+      USING TIMESTAMP %s;"""), 
       (
         stock.s_w_id,
         stock.s_i_id,
@@ -165,7 +169,8 @@ def execute_t1(session, args_arr):
         stock.s_dist_08,
         stock.s_dist_09,
         stock.s_dist_10,
-        stock.s_data
+        stock.s_data,
+        ts + 1
       ))
     session.execute(batch)
     

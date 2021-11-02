@@ -1,3 +1,4 @@
+import time
 from cassandra.query import BatchStatement, SimpleStatement
 from decimal import Decimal
 
@@ -33,9 +34,11 @@ def execute_t3(session, args_arr):
       # print(order)
 
       ##### update carrier_id in order_by_carrier_id, which is a PK col
+      ts = int(time.time() * 10e6)
       batch = BatchStatement()
       batch.add(SimpleStatement(f"""
         DELETE FROM order_by_carrier_id 
+        USING TIMESTAMP {ts}
         WHERE o_w_id={order.o_w_id} 
           AND o_d_id={order.o_d_id} 
           AND o_carrier_id={order.o_carrier_id} 
@@ -55,7 +58,8 @@ def execute_t3(session, args_arr):
                             o_c_middle,
                             o_entry_d,
                             o_ol_cnt) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    USING TIMESTAMP %s;"""), 
                          (order.o_w_id,
                           order.o_d_id,
                           new_carrier_id,
@@ -66,7 +70,8 @@ def execute_t3(session, args_arr):
                           order.o_c_last,
                           order.o_c_middle,
                           order.o_entry_d,
-                          order.o_ol_cnt))
+                          order.o_ol_cnt,
+                          ts + 1))
       
       session.execute(batch)
 
@@ -82,9 +87,11 @@ def execute_t3(session, args_arr):
       # print(chk)
 
       ##### update carrier_id in orders, which is a PK col
+      ts = int(time.time() * 10e6)
       batch = BatchStatement()
       batch.add(SimpleStatement(f"""
         DELETE FROM orders 
+        USING TIMESTAMP {ts}
         WHERE o_w_id={order.o_w_id} 
           AND o_d_id={order.o_d_id} 
           AND o_id={order.o_id} 
@@ -102,7 +109,8 @@ def execute_t3(session, args_arr):
                             o_c_middle,
                             o_entry_d,
                             o_ol_cnt) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    USING TIMESTAMP %s;"""), 
                          (order.o_w_id,
                           order.o_d_id,
                           new_carrier_id,
@@ -113,7 +121,8 @@ def execute_t3(session, args_arr):
                           order.o_c_last,
                           order.o_c_middle,
                           order.o_entry_d,
-                          order.o_ol_cnt))
+                          order.o_ol_cnt,
+                          ts + 1))
       session.execute(batch)      
       
       #### update order_line table
@@ -163,10 +172,11 @@ def execute_t3(session, args_arr):
       customer = customer[0]
       # print(customer)
 
-
+      ts = int(time.time() * 10e6)
       batch = BatchStatement()
       batch.add(SimpleStatement(f"""
         DELETE FROM customer 
+        USING TIMESTAMP {ts}
         WHERE c_w_id={w_id} 
         and c_d_id={d_id} 
         and c_id={order.o_c_id};"""))
@@ -195,7 +205,8 @@ def execute_t3(session, args_arr):
                               c_w_name,
                               c_ytd_payment,
                               c_zip) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    USING TIMESTAMP %s;"""), 
                            (customer.c_w_id, 
                             customer.c_d_id, 
                             customer.c_id, 
@@ -218,14 +229,17 @@ def execute_t3(session, args_arr):
                             customer.c_street_2,
                             customer.c_w_name,
                             customer.c_ytd_payment,
-                            customer.c_zip))
+                            customer.c_zip,
+                            ts + 1))
       
       session.execute(batch)
 
       #### customer's C_BALANCE duplicated in top_balance table
+      ts = int(time.time() * 10e6)
       batch = BatchStatement()
       batch.add(SimpleStatement(f"""
         DELETE FROM top_balance 
+        USING TIMESTAMP {ts}
         WHERE c_w_id={customer.c_w_id} 
         and c_d_id={customer.c_d_id} 
         and c_balance={customer.c_balance} 
@@ -241,7 +255,8 @@ def execute_t3(session, args_arr):
                                  c_last,
                                  c_middle,
                                  c_w_name) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""), 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    USING TIMESTAMP %s;"""), 
                           (customer.c_w_id, 
                            customer.c_d_id, 
                            customer.c_balance + ol_amount_total,
@@ -250,7 +265,8 @@ def execute_t3(session, args_arr):
                            customer.c_first,
                            customer.c_last,
                            customer.c_middle,
-                           customer.c_w_name))
+                           customer.c_w_name,
+                           ts + 1))
       session.execute(batch)
 
       #### check customer updated
