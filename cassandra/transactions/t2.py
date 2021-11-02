@@ -37,10 +37,7 @@ def execute_t2(session, args_arr):
     upd_warehouse = SimpleStatement(f"""UPDATE warehouse SET w_ytd={ret_warehouse.w_ytd + payment} 
                                         WHERE w_id={c_w_id};""")
 
-    response = session.execute(upd_warehouse)
-    if not response:
-      # update failed, silently returning
-      return 1
+    session.execute(upd_warehouse)
 
     upd_district = SimpleStatement(f"""UPDATE district SET d_ytd={ret_district.d_ytd + payment} 
                                     WHERE d_w_id={c_w_id} AND d_id={c_d_id};""")
