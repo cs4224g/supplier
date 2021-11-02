@@ -137,9 +137,8 @@ def execute_t3(session, args_arr):
 
       # note: order_lines is an iterator and will be exhausted. Only one iteration is allowed without duplicating it.
       ol_amount_total = Decimal(0)
+      none_ol_amount = False
       for r in order_lines:
-        ol_amount_total += r.ol_amount
-
         session.execute(f"""
           UPDATE order_line 
           SET ol_delivery_d=toTimestamp(Now())
@@ -150,6 +149,17 @@ def execute_t3(session, args_arr):
             AND OL_NUMBER=%s
             AND OL_C_ID=%s;""",
           (r.ol_w_id, r.ol_d_id, r.ol_o_id, r.ol_quantity, r.ol_number, r.ol_c_id))
+
+        if r.ol_amount is None:
+            none_ol_amount = True
+            # try to update as many order_lines as possible
+            continue
+        ol_amount_total += r.ol_amount
+
+
+      if none_ol_amount:
+          return_code = 1
+          continue
         
       #### check order_lines correctly updated
       # print()
