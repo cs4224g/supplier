@@ -47,63 +47,63 @@ def execute_t2(session, args_arr):
     ts = int(time.time() * 10e6)
     batch = BatchStatement()
     batch.add(SimpleStatement(f"""
-      DELETE FROM customer 
-      USING TIMESTAMP {ts}
-      WHERE c_w_id={c_w_id} 
-      and c_d_id={c_d_id} 
-      and c_id={c_id};"""))
+        DELETE FROM customer 
+        USING TIMESTAMP {ts}
+        WHERE c_w_id={c_w_id} 
+        and c_d_id={c_d_id} 
+        and c_id={c_id};"""))
 
     batch.add(SimpleStatement(f"""
-    INSERT INTO customer (c_w_id, 
-                          c_d_id, 
-                          c_id, 
-                          c_balance, 
-                          c_city, 
-                          c_credit, 
-                          c_credit_lim, 
-                          c_d_name, 
-                          c_data, 
-                          c_delivery_cnt,
-                          c_discount,
-                          c_first,
-                          c_last,
-                          c_middle,
-                          c_payment_cnt,
-                          c_phone,
-                          c_since,
-                          c_state,
-                          c_street_1,
-                          c_street_2,
-                          c_w_name,
-                          c_ytd_payment,
-                          c_zip) 
-                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                  USING TIMESTAMP %s;"""), 
-                          (ret_customer.c_w_id, 
-                          ret_customer.c_d_id, 
-                          ret_customer.c_id, 
-                          ret_customer.c_balance - payment, 
-                          ret_customer.c_city, 
-                          ret_customer.c_credit, 
-                          ret_customer.c_credit_lim, 
-                          ret_customer.c_d_name, 
-                          ret_customer.c_data, 
-                          ret_customer.c_delivery_cnt,
-                          ret_customer.c_discount,
-                          ret_customer.c_first,
-                          ret_customer.c_last,
-                          ret_customer.c_middle,
-                          ret_customer.c_payment_cnt + 1,
-                          ret_customer.c_phone,
-                          ret_customer.c_since,
-                          ret_customer.c_state,
-                          ret_customer.c_street_1,
-                          ret_customer.c_street_2,
-                          ret_customer.c_w_name,
-                          ret_customer.c_ytd_payment + float(payment),
-                          ret_customer.c_zip,
-                          ts + 1 # so that this stmt is ran after the DELETE in this batch
-                          ))
+        INSERT INTO customer (c_w_id, 
+                            c_d_id, 
+                            c_id, 
+                            c_balance, 
+                            c_city, 
+                            c_credit, 
+                            c_credit_lim, 
+                            c_d_name, 
+                            c_data, 
+                            c_delivery_cnt,
+                            c_discount,
+                            c_first,
+                            c_last,
+                            c_middle,
+                            c_payment_cnt,
+                            c_phone,
+                            c_since,
+                            c_state,
+                            c_street_1,
+                            c_street_2,
+                            c_w_name,
+                            c_ytd_payment,
+                            c_zip) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    USING TIMESTAMP %s;"""), 
+                            (ret_customer.c_w_id, 
+                            ret_customer.c_d_id, 
+                            ret_customer.c_id, 
+                            ret_customer.c_balance - payment, 
+                            ret_customer.c_city, 
+                            ret_customer.c_credit, 
+                            ret_customer.c_credit_lim, 
+                            ret_customer.c_d_name, 
+                            ret_customer.c_data, 
+                            ret_customer.c_delivery_cnt,
+                            ret_customer.c_discount,
+                            ret_customer.c_first,
+                            ret_customer.c_last,
+                            ret_customer.c_middle,
+                            ret_customer.c_payment_cnt + 1,
+                            ret_customer.c_phone,
+                            ret_customer.c_since,
+                            ret_customer.c_state,
+                            ret_customer.c_street_1,
+                            ret_customer.c_street_2,
+                            ret_customer.c_w_name,
+                            ret_customer.c_ytd_payment + float(payment),
+                            ret_customer.c_zip,
+                            ts + 1 # so that this stmt is ran after the DELETE in this batch
+                            ))
     
     session.execute(batch)
     
@@ -113,35 +113,35 @@ def execute_t2(session, args_arr):
     ts = int(time.time() * 10e6)
     batch = BatchStatement()
     batch.add(SimpleStatement(f"""
-      DELETE FROM top_balance 
-      USING TIMESTAMP {ts}
-      WHERE c_w_id={c_w_id} 
-      and c_d_id={c_d_id} 
-      and c_balance={ret_customer.c_balance} 
-      and c_id={c_id};"""))
+        DELETE FROM top_balance 
+        USING TIMESTAMP {ts}
+        WHERE c_w_id={c_w_id} 
+        and c_d_id={c_d_id} 
+        and c_balance={ret_customer.c_balance} 
+        and c_id={c_id};"""))
 
     batch.add(SimpleStatement(f"""
-      INSERT INTO top_balance (c_w_id,
-                                c_d_id,
-                                c_balance,
-                                c_id,
-                                c_d_name,
-                                c_first,
-                                c_last,
-                                c_middle,
-                                c_w_name) 
-                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                  USING TIMESTAMP %s;"""), 
-                          (ret_customer.c_w_id, 
-                          ret_customer.c_d_id, 
-                          ret_customer.c_balance - payment, 
-                          ret_customer.c_id, 
-                          ret_customer.c_d_name, 
-                          ret_customer.c_first,
-                          ret_customer.c_last,
-                          ret_customer.c_middle,
-                          ret_customer.c_w_name,
-                          ts + 1))
+        INSERT INTO top_balance (c_w_id,
+                                    c_d_id,
+                                    c_balance,
+                                    c_id,
+                                    c_d_name,
+                                    c_first,
+                                    c_last,
+                                    c_middle,
+                                    c_w_name) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    USING TIMESTAMP %s;"""), 
+                            (ret_customer.c_w_id, 
+                            ret_customer.c_d_id, 
+                            ret_customer.c_balance - payment, 
+                            ret_customer.c_id, 
+                            ret_customer.c_d_name, 
+                            ret_customer.c_first,
+                            ret_customer.c_last,
+                            ret_customer.c_middle,
+                            ret_customer.c_w_name,
+                            ts + 1))
     session.execute(batch)
 
     # print required info; printing updated values
