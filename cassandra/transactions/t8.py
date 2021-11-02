@@ -12,7 +12,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     # Test: R,10,9,2819
     query_items = SimpleStatement(
         f'SELECT OL_O_ID, OL_I_ID \

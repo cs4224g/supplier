@@ -11,7 +11,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     query_next_order_id = session.execute(SimpleStatement(
         f'SELECT D_NEXT_O_ID \
         FROM wholesale_supplier.district \

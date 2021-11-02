@@ -3,7 +3,9 @@ import numpy as np
 
 from cassandra.query import named_tuple_factory, BatchStatement, SimpleStatement
 
-from cassandra.cluster import Cluster
+from cassandra.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+from cassandra.policies import RetryPolicy, WhiteListRoundRobinPolicy
+from cassandra import ConsistencyLevel
 from numpy.core.numeric import Inf
 
 from transactions.t1 import execute_t1
@@ -31,20 +33,27 @@ xact_info = [[0,0,0] for i in range(9)]
 latencies = []
 
 if __name__ == '__main__':
-    # For connecting to multiple clusters
-    # cluster = Cluster(['192.168.1.1', '192.168.1.2'])
-    cluster = Cluster(['127.0.0.1'])
+    profile = ExecutionProfile(
+        load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']),
+        # retry_policy=RetryPolicy(), # DEFAULT
+        consistency_level=ConsistencyLevel.LOCAL_QUORUM,
+        serial_consistency_level=ConsistencyLevel.LOCAL_SERIAL,
+        request_timeout=15,
+        # row_factory=named_tuple_factory
+    )
+    cluster = Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: profile})
     session = cluster.connect('wholesale_supplier')
-    session.row_factory = named_tuple_factory
+    # session.row_factory = named_tuple_factory
 
     num_xacts = 0
+    cnt = 0
     total_exec_time = 0 # in seconds
 
     for line in sys.stdin:
         input_arr = line.split(",")
         xact = input_arr[0].strip()
-
-        print(f'{line.strip()} | Xact {num_xacts+1}')
+        cnt += 1
+        print(f'{line.strip()} | Xact {cnt}')
         start_time = time.time()
         
         isFail = 0 # fail status

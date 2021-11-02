@@ -11,7 +11,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     query_cust = session.execute(SimpleStatement(
         f'SELECT C_FIRST, C_MIDDLE, C_LAST, C_BALANCE \
         FROM wholesale_supplier.customer \
