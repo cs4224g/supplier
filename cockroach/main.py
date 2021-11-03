@@ -33,13 +33,21 @@ def main():
     failed_i = 0
     failed_t = 0
     failed_r = 0
+    t1_lat = []
+    t2_lat = []
+    t3_lat = []
+    t4_lat = []
+    t5_lat = []
+    t6_lat = []
+    t7_lat = []
+    t8_lat = []
     
     latencies = []
     
     #execute transactions
     with conn:
         for line in sys.stdin:
-            print('Current Transaction = ' + no_transact)
+            print('Current Transaction = ' + str(no_transact))
             instruct = line.strip().split(',')
             transact = line[0]
             start_time = time.time()
@@ -57,44 +65,73 @@ def main():
                     warehouse.append(int(desc[1]))
                     quantity.append(int(desc[2]))
                 failed_n += run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[2]), int(instruct[3]), int(instruct[1]), int(instruct[4]), items, warehouse, quantity))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
+                t1_lat.append(latency)
             elif transact == 'P':
                 failed_p += run_transaction(conn, lambda conn: payment_transaction(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
+                t2_lat.append(latency)
             elif transact == 'D':
                 failed_d += run_transaction(conn, lambda conn: delivery_transaction(conn, instruct[1], instruct[2]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
+                t3_lat.append(latency)
             elif transact == 'O':
                 failed_o += run_transaction(conn, lambda conn: execute_t4(conn, instruct[1], instruct[2], instruct[3]))
+                t4_lat.append(latency)
                 #execute_t4(conn, instruct[1], instruct[2], instruct[3])
             elif transact == 'S':
                 failed_s += run_transaction(conn, lambda conn: execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+                t5_lat.append(latency)
                 #execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4])
             elif transact == 'I':
                 failed_i += run_transaction(conn, lambda conn: execute_t6(conn, instruct[1], instruct[2], instruct[3]))
+                t6_lat.append(latency)
                 #execute_t6(conn, instruct[1], instruct[2], instruct[3])
             elif transact == 'T':
                 failed_t += run_transaction(conn, lambda conn: execute_t7(conn))
+                t7_lat.append(latency)
                 #conn: execute_t7(conn)
             elif transact == 'R':
                 failed_r += run_transaction(conn, lambda conn: execute_t8(conn, instruct[1], instruct[2], instruct[3]))
+                t8_lat.append(latency)
                 #execute_t8(conn, instruct[1], instruct[2], instruct[3])
-                    
-            no_transact += 1
-            latency = time.time() - start_time
-            latencies.append(latency)
-            total_time += latency
+                
+                no_transact += 1
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
+                t8_lat.append(latency)
 
     succeeded_t = no_transact - failed_d - failed_i - failed_n - failed_o - failed_p - failed_r - failed_s - failed_t
     transaction_throughput = succeeded_t/total_time
     
-    print('successful transacts = ' + succeeded_t)
-    print('failed new order transacts = ' + failed_n)
-    print('failed delivery transacts = ' + failed_d)
-    print('failed payment transacts = ' + failed_p)
-    print('failed popular item transacts = ' + failed_i)
-    print('failed order status transacts = ' + failed_o)
-    print('failed stock level transacts = ' + failed_s)
-    print('failed top balance transacts = ' + failed_t)
-    print('failed related customer transacts = ' + failed_r)
+    print('successful transacts = ' + str(succeeded_t))
+    print("Total failures:")
+    print('T1:' + str(failed_n))
+    print('T2:' + str(failed_p))
+    print('T3:' + str(failed_d))
+    print('T4:' + str(failed_i))
+    print('T5:' + str(failed_o))
+    print('T6:' + str(failed_s))
+    print('T7:' + str(failed_t))
+    print('T8:' + str(failed_r))
     
+    print('avg latencies:')
+    print('T1:' + str(np.average(t1_lat)))
+    print('T2:' + str(np.average(t2_lat)))
+    print('T3:' + str(np.average(t3_lat)))
+    print('T4:' + str(np.average(t4_lat)))
+    print('T5:' + str(np.average(t5_lat)))
+    print('T6:' + str(np.average(t6_lat)))
+    print('T7:' + str(np.average(t7_lat)))
+    print('T8:' + str(np.average(t8_lat)))
+
     #avg latency in ms
     avg_transac_latency = total_time/no_transact * 1000 
     #median transaction latency in ms
