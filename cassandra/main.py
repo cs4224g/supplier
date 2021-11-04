@@ -3,7 +3,9 @@ import numpy as np
 
 from cassandra.query import named_tuple_factory, BatchStatement, SimpleStatement
 
-from cassandra.cluster import Cluster
+from cassandra.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+from cassandra.policies import RetryPolicy, WhiteListRoundRobinPolicy
+from cassandra import ConsistencyLevel
 from numpy.core.numeric import Inf
 
 from transactions.t1 import execute_t1
@@ -26,58 +28,65 @@ xact_map = {
     "R":8
 }
 
-xact_latency = [[0,0] for i in range(9)]
+# maps xact num to [total_xact_cnt, total_exec_time, failed_xact_cnt]
+xact_info = [[0,0,0] for i in range(9)]
 latencies = []
 
 if __name__ == '__main__':
-    # For connecting to multiple clusters
-    # cluster = Cluster(['192.168.1.1', '192.168.1.2'])
-    cluster = Cluster(['127.0.0.1'])
+    profile = ExecutionProfile(
+        load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']),
+        # retry_policy=RetryPolicy(), # DEFAULT
+        consistency_level=ConsistencyLevel.LOCAL_QUORUM,
+        serial_consistency_level=ConsistencyLevel.LOCAL_SERIAL,
+        request_timeout=15,
+        # row_factory=named_tuple_factory
+    )
+    cluster = Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: profile})
     session = cluster.connect('wholesale_supplier')
-    session.row_factory = named_tuple_factory
+    # session.row_factory = named_tuple_factory
 
     num_xacts = 0
+    cnt = 0
     total_exec_time = 0 # in seconds
-    failure_count_t4 = 0
-    failure_count_t5 = 0
-    failure_count_t6 = 0
 
     for line in sys.stdin:
         input_arr = line.split(",")
         xact = input_arr[0].strip()
-
-        print(f'{line.strip()} | Xact {num_xacts+1}')
+        cnt += 1
+        print(f'{line.strip()} | Xact {cnt}')
         start_time = time.time()
         
+        isFail = 0 # fail status
         if(xact == 'N'):
-            execute_t1(session, input_arr)
+            isFail = execute_t1(session, input_arr)
         elif(xact == 'P'):
-            execute_t2(session, input_arr)
+            isFail = execute_t2(session, input_arr)
         elif(xact == 'D'):
-            execute_t3(session, input_arr)
+            isFail = execute_t3(session, input_arr)
         elif (xact == 'O'):
-            failure_count_t4 = failure_count_t4 + execute_t4(session, line)
+            isFail = execute_t4(session, line)
         elif (xact == 'S'):
-            failure_count_t5 = failure_count_t5 + execute_t5(session, line)
+            isFail = execute_t5(session, line)
         elif (xact == 'I'):
-            failure_count_t6 = failure_count_t6 + execute_t6(session, line)
+            isFail = execute_t6(session, line)
         elif (xact == 'T'):
-            execute_t7(session)
+            isFail = execute_t7(session)
         elif (xact == 'R'):
-            execute_t8(session, line)
+            isFail = execute_t8(session, line)
         else:
             print('fall thru', xact)
 
         latency_seconds = time.time() - start_time
         total_exec_time += latency_seconds
-        num_xacts += 1
+        num_xacts += (1 - isFail)
         latencies.append(latency_seconds)
 
 
         # Transaction-specific latencies
         xact_num = xact_map[xact]
-        xact_latency[xact_num][0] += 1
-        xact_latency[xact_num][1] += latency_seconds
+        xact_info[xact_num][0] += 1
+        xact_info[xact_num][1] += latency_seconds
+        xact_info[xact_num][2] += isFail
 
     cluster.shutdown()
 
@@ -99,15 +108,14 @@ if __name__ == '__main__':
     print(metrics, file=sys.stderr)
 
     print("Total failures: ")
-    print(f'T4: {failure_count_t4}')
-    print(f'T5: {failure_count_t5}')
-    print(f'T5: {failure_count_t6}')
+    for i in range(1,9):
+        print(f'T{i}: {xact_info[i][2]}/{xact_info[i][0]}')
     
 
     print("Average transaction latency: ")
     for xact_num in range(1,9):
-        total_time = xact_latency[xact_num][1]
-        total_count = xact_latency[xact_num][0]
+        total_time = xact_info[xact_num][1]
+        total_count = xact_info[xact_num][0]
         xact_avg_latency = total_time / total_count if total_count > 0 else Inf
         xact_metric = f'T{xact_num}: {xact_avg_latency}s'
         print(xact_metric)

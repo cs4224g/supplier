@@ -89,32 +89,43 @@ def main():
             elif transact == 'O':
                 failed_o += run_transaction(conn, lambda conn: execute_t4(
                     conn, instruct[1], instruct[2], instruct[3]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t4_lat.append(latency)
                 #execute_t4(conn, instruct[1], instruct[2], instruct[3])
             elif transact == 'S':
                 failed_s += run_transaction(conn, lambda conn: execute_t5(
                     conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t5_lat.append(latency)
                 #execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4])
             elif transact == 'I':
                 failed_i += run_transaction(conn, lambda conn: execute_t6(
                     conn, instruct[1], instruct[2], instruct[3]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t6_lat.append(latency)
                 #execute_t6(conn, instruct[1], instruct[2], instruct[3])
             elif transact == 'T':
                 failed_t += run_transaction(conn,
                                             lambda conn: execute_t7(conn))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t7_lat.append(latency)
                 #conn: execute_t7(conn)
             elif transact == 'R':
                 failed_r += run_transaction(conn, lambda conn: execute_t8(
                     conn, instruct[1], instruct[2], instruct[3]))
-                t8_lat.append(latency)
-                #execute_t8(conn, instruct[1], instruct[2], instruct[3])
                 latency = time.time() - start_time
                 latencies.append(latency)
                 total_time += latency
                 t8_lat.append(latency)
+                #execute_t8(conn, instruct[1], instruct[2], instruct[3])
             no_transact += 1
 
     succeeded_t = no_transact - failed_d - failed_i - failed_n - \

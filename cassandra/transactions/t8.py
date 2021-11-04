@@ -12,7 +12,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     # Test: R,10,9,2819
     query_items = SimpleStatement(
         f'SELECT OL_O_ID, OL_I_ID \
@@ -72,6 +71,7 @@ def execute_t8(session_input, user_input):
     print("T8 program was called!")
     process_input(user_input)
     perform_transaction(session_input)
+    return 0
 
 
 def format_list(items):
