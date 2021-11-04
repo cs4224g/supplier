@@ -206,7 +206,7 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
-def run_transaction(conn, op, max_retries=3):
+def run_transaction(conn, op, max_retries=5):
     """
     Execute the operation *op(conn)* retrying serialization failure.
 
@@ -228,16 +228,18 @@ def run_transaction(conn, op, max_retries=3):
             # This is a retry error, so we roll back the current
             # transaction and sleep for a bit before retrying. The
             # sleep time increases for each failed transaction.
-            logging.debug("got error: %s", e)
+            #logging.debug("got error: %s", e)
             conn.rollback()
-            logging.debug("EXECUTE SERIALIZATION_FAILURE BRANCH")
-            sleep_ms = (2 ** retry) * 0.1 * (random.random() + 0.5)
-            logging.debug("Sleeping %s seconds", sleep_ms)
+            #logging.debug("EXECUTE SERIALIZATION_FAILURE BRANCH")
+            #sleep_ms = (2 ** retry) * 0.1 * (random.random() + 0.5)
+            sleep_ms = 0.1
+            #logging.debug("Sleeping %s seconds", sleep_ms)
             time.sleep(sleep_ms)
 
         except psycopg2.Error as e:
-            logging.debug("got error: %s", e)
-            logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
+            #logging.debug("got error: %s", e)
+            #logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
+            print('psycopg2 error')
             #return 1
             #raise e
 

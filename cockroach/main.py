@@ -33,14 +33,14 @@ def main():
     failed_i = 0
     failed_t = 0
     failed_r = 0
-    t1_lat = []
-    t2_lat = []
-    t3_lat = []
-    t4_lat = []
-    t5_lat = []
-    t6_lat = []
-    t7_lat = []
-    t8_lat = []
+    t1_lat = [0]
+    t2_lat = [0]
+    t3_lat = [0]
+    t4_lat = [0]
+    t5_lat = [0]
+    t6_lat = [0]
+    t7_lat = [0]
+    t8_lat = [0]
     
     latencies = []
     
@@ -101,12 +101,11 @@ def main():
                 failed_r += run_transaction(conn, lambda conn: execute_t8(conn, instruct[1], instruct[2], instruct[3]))
                 t8_lat.append(latency)
                 #execute_t8(conn, instruct[1], instruct[2], instruct[3])
-                
-                no_transact += 1
                 latency = time.time() - start_time
                 latencies.append(latency)
                 total_time += latency
                 t8_lat.append(latency)
+            no_transact += 1
 
     succeeded_t = no_transact - failed_d - failed_i - failed_n - failed_o - failed_p - failed_r - failed_s - failed_t
     transaction_throughput = succeeded_t/total_time
