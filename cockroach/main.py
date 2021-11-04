@@ -20,8 +20,8 @@ from stats import get_stats
 
 def main():
 
-    conn = psycopg2.connect("postgresql://root@192.168.51.3:26357?sslmode=disable")
-    #conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
+    #conn = psycopg2.connect("postgresql://root@192.168.51.3:26357?sslmode=disable")
+    conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
     max_retries = 3
     no_transact = 0
     total_time = 0
@@ -83,28 +83,39 @@ def main():
                 t3_lat.append(latency)
             elif transact == 'O':
                 failed_o += run_transaction(conn, lambda conn: execute_t4(conn, instruct[1], instruct[2], instruct[3]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t4_lat.append(latency)
                 #execute_t4(conn, instruct[1], instruct[2], instruct[3])
             elif transact == 'S':
                 failed_s += run_transaction(conn, lambda conn: execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t5_lat.append(latency)
                 #execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4])
             elif transact == 'I':
                 failed_i += run_transaction(conn, lambda conn: execute_t6(conn, instruct[1], instruct[2], instruct[3]))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t6_lat.append(latency)
                 #execute_t6(conn, instruct[1], instruct[2], instruct[3])
             elif transact == 'T':
                 failed_t += run_transaction(conn, lambda conn: execute_t7(conn))
+                latency = time.time() - start_time
+                latencies.append(latency)
+                total_time += latency
                 t7_lat.append(latency)
                 #conn: execute_t7(conn)
             elif transact == 'R':
                 failed_r += run_transaction(conn, lambda conn: execute_t8(conn, instruct[1], instruct[2], instruct[3]))
-                t8_lat.append(latency)
-                #execute_t8(conn, instruct[1], instruct[2], instruct[3])
                 latency = time.time() - start_time
                 latencies.append(latency)
                 total_time += latency
                 t8_lat.append(latency)
+                #execute_t8(conn, instruct[1], instruct[2], instruct[3])
             no_transact += 1
 
     succeeded_t = no_transact - failed_d - failed_i - failed_n - failed_o - failed_p - failed_r - failed_s - failed_t

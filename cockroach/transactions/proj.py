@@ -238,6 +238,7 @@ def run_transaction(conn, op, max_retries=5):
 
         except psycopg2.Error as e:
             #logging.debug("got error: %s", e)
+            #print("got error: %s", e)
             #logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
             print('psycopg2 error')
             #return 1
