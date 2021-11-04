@@ -1,11 +1,13 @@
 #retrieve 15 statistics
+import psycopg2
 
-def get_stats(connection):
+def get_stats(connection, client):
     print('\n============== retrieving statistics ================\n')
     #clear file
-    open('0.csv', 'w').close()
+    filename = str(client) + '.csv'
+    open(filename, 'w').close()
 
-    f = open("0.csv", 'a')
+    f = open(filename, 'a')
 
     with connection.cursor() as cur:
         #sum(w_ytd)
@@ -69,8 +71,15 @@ def get_stats(connection):
         f.write(str(cur.fetchone()[0]) + '\n')
 
     f.close()
-    print("Statistics written to 0.csv")
+    #print("Statistics written to 0.csv")
 
+def main():
+    conn = psycopg2.connect("postgresql://root@192.168.51.3:26357?sslmode=disable")
+    
+    for i in range(0, 40):
+        get_stats(conn, i)
 
+if __name__ == "__main__":
+    main()
         
         

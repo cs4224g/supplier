@@ -14,6 +14,8 @@ from psycopg2.errors import SerializationFailure
 
 
 def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLIER_WAREHOUSE, QUANTITY):
+    print('\n================ executing new_order transaction ================\n')
+
     with conn.cursor() as cur:
 
         # get N and D_TAX
@@ -116,10 +118,12 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
             print(output_item)
 
     conn.commit()
+    print("new order transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
+    print('\n================ executing payment transaction ================\n')
     with conn.cursor() as cur:
         # update warehouse W_YTD
         cur.execute(
@@ -146,10 +150,12 @@ def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
         print(district_info)
         print(PAYMENT)
     conn.commit()
+    print("payment transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def delivery_transaction(conn, W_ID, CARRIER_ID):
+    print('\n================ executing delivery transaction  ================\n')
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
@@ -173,11 +179,15 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
 
             # update customer
             cur.execute(
-                "UPDATE proj.customer SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 FROM (SELECT SUM(OL_AMOUNT) AS B FROM proj.order_line WHERE OL_W_ID = %s, OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID)) AS temp WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
+                "UPDATE proj.customer \
+                 SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 \
+                    FROM \
+                    (SELECT SUM(OL_AMOUNT) AS B FROM proj.order_line WHERE OL_W_ID = %s AND OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID)) AS temp \
+                    WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
                     order_in_district[0], order_in_district[1], order_in_district[2], order_in_district[0], order_in_district[1], order_in_district[3])
             )
-
-    conn.commit()
+        conn.commit()
+    print("delivery transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
@@ -213,8 +223,8 @@ def run_transaction(conn, op, max_retries=5):
 
         except psycopg2.Error as e:
             #logging.debug("got error: %s", e)
-            #print("got error: %s", e)
             #logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
+            print(e)
             print('psycopg2 error')
             # return 1
             #raise e
