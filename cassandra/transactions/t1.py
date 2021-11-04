@@ -264,23 +264,6 @@ def execute_t1(session, args_arr):
                 ol_i_id,
                 c_id
             ))
-        session.execute("""
-            INSERT INTO order_line_by_order (
-                OL_W_ID,
-                OL_D_ID,
-                OL_O_ID,
-                OL_NUMBER,
-                OL_I_ID,
-                OL_C_ID
-            ) VALUES (%s, %s, %s, %s, %s, %s);""",
-            (
-                w_id,
-                d_id,
-                next_o_id,
-                i+1, #1-based indexing
-                ol_i_id,
-                c_id
-            ))
   
     # print('bef', total_amount)
     d_tax = district.d_tax
