@@ -90,15 +90,15 @@ def execute_t3(session, args_arr):
         ts = int(time.time() * 10e6)
         batch = BatchStatement()
         batch.add(SimpleStatement(f"""
-            DELETE FROM orders 
+            DELETE FROM order_status 
             USING TIMESTAMP {ts}
             WHERE o_w_id={order.o_w_id} 
             AND o_d_id={order.o_d_id} 
-            AND o_id={order.o_id} 
-            AND o_c_id={order.o_c_id};"""))
+            AND o_c_id={order.o_c_id}
+            AND o_id={order.o_id};"""))
 
         batch.add(SimpleStatement(f"""
-            INSERT INTO orders (o_w_id,
+            INSERT INTO order_status (o_w_id,
                                 o_d_id,
                                 o_carrier_id,
                                 o_id,
