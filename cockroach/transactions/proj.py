@@ -20,7 +20,7 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
 
         # get N and D_TAX
         cur.execute(
-            "SELECT D_TAX, D_NEXT_O_ID FROM proj.district WHERE D_W_ID = %s AND D_ID = %s", (
+            "SELECT D_TAX, D_NEXT_O_ID FROM proj.district WHERE D_W_ID = %s AND D_ID = %s FOR UPDATE", (
                 W_ID, D_ID)
         )
         district_info = cur.fetchone()
@@ -73,7 +73,7 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
         for i in range(NUM_ITEMS):
             # get ADJUSTED_QTY
             cur.execute(
-                "SELECT S_QUANTITY FROM proj.stock WHERE S_W_ID = %s AND S_I_ID = %s ", (
+                "SELECT S_QUANTITY FROM proj.stock WHERE S_W_ID = %s AND S_I_ID = %s FOR UPDATE", (
                     SUPPLIER_WAREHOUSE[i], ITEM_NUMBER[i])
             )
             S_QUANTITY = cur.fetchone()[0]
@@ -126,7 +126,6 @@ def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
                 C_W_ID, C_D_ID, C_ID)
         )
         customer_info = list(cur.fetchone())
-        print(customer_info)
         customer_info[16] = float(customer_info[16]) - float(PAYMENT)
         # warehouse address
         cur.execute(
@@ -188,14 +187,13 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
             # update customer
             cur.execute(
                 "UPDATE proj.customer \
-                SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 \
+                 SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 \
                     FROM \
                     (SELECT SUM(OL_AMOUNT) AS B FROM proj.order_line WHERE OL_W_ID = %s AND OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID)) AS temp \
                     WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
                     order_in_district[0], order_in_district[1], order_in_district[2], order_in_district[0], order_in_district[1], order_in_district[3])
             )
-
-    conn.commit()
+        conn.commit()
     print("delivery transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
