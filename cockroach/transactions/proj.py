@@ -14,6 +14,7 @@ from psycopg2.errors import SerializationFailure
 
 
 def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLIER_WAREHOUSE, QUANTITY):
+    print('================ executing new_order_transaction query ================')
     with conn.cursor() as cur:
         # get W_TAX
         cur.execute(
@@ -116,10 +117,12 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
         TOTAL_AMOUNT *= (1 * D_TAX * W_TAX) * (1 - C_DISCOUNT)
 
     conn.commit()
+    print('new order transaction committed')
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
+    print('================ executing payment_transaction query ================')
     with conn.cursor() as cur:
         # update warehouse W_YTD
         cur.execute(
@@ -157,10 +160,12 @@ def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
         print(PAYMENT)
 
     conn.commit()
+    print('payment transaction committed')
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def delivery_transaction(conn, W_ID, CARRIER_ID):
+    print('================ executing delivery_transaction query ================')
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
@@ -197,10 +202,11 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
             )
 
     conn.commit()
+    print('delivery transaction committed')
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
-def run_transaction(conn, op, max_retries=3):
+def run_transaction(conn, op, max_retries=5):
     """
     Execute the operation *op(conn)* retrying serialization failure.
 
@@ -209,33 +215,40 @@ def run_transaction(conn, op, max_retries=3):
     """
     # leaving this block the transaction will commit or rollback
     # (if leaving with an exception)
-    with conn:
-        for retry in range(1, max_retries + 1):
-            try:
-                op(conn)
+    #with conn:
+    for retry in range(1, max_retries + 1):
+        try:
+            op(conn)
 
-                # If we reach this point, we were able to commit, so we break
-                # from the retry loop.
-                return
+            # If we reach this point, we were able to commit, so we break
+            # from the retry loop.
+            return 0
 
-            except SerializationFailure as e:
-                # This is a retry error, so we roll back the current
-                # transaction and sleep for a bit before retrying. The
-                # sleep time increases for each failed transaction.
-                logging.debug("got error: %s", e)
-                conn.rollback()
-                logging.debug("EXECUTE SERIALIZATION_FAILURE BRANCH")
-                sleep_ms = (2 ** retry) * 0.1 * (random.random() + 0.5)
-                logging.debug("Sleeping %s seconds", sleep_ms)
-                time.sleep(sleep_ms)
+        except SerializationFailure as e:
+            # This is a retry error, so we roll back the current
+            # transaction and sleep for a bit before retrying. The
+            # sleep time increases for each failed transaction.
+            #logging.debug("got error: %s", e)
+            conn.rollback()
+            #logging.debug("EXECUTE SERIALIZATION_FAILURE BRANCH")
+            #sleep_ms = (2 ** retry) * 0.1 * (random.random() + 0.5)
+            sleep_ms = 0.1
+            #logging.debug("Sleeping %s seconds", sleep_ms)
+            time.sleep(sleep_ms)
 
-            except psycopg2.Error as e:
-                logging.debug("got error: %s", e)
-                logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
-                raise e
+        except psycopg2.Error as e:
+            #logging.debug("got error: %s", e)
+            #print("got error: %s", e)
+            #logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
+            print('psycopg2 error')
+            #return 1
+            #raise e
 
-        raise ValueError(
-            f"Transaction did not succeed after {max_retries} retries")
+    #raise ValueError(
+     #   f"Transaction did not succeed after {max_retries} retries")
+    print('Transaction did not succeed after {max_retries} retries')
+    return 1
+    
 
 
 def test_retry_loop(conn):
