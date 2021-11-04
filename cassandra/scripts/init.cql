@@ -190,16 +190,3 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
 	OL_C_ID INT, 
 	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)
 );
-
--- For T8
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_order (
-	OL_W_ID INT,
-	OL_D_ID INT,
-	OL_O_ID INT,
-	OL_NUMBER INT,
-	OL_I_ID INT,
-    -- extra
-	OL_C_ID INT,
-	PRIMARY KEY ((OL_W_ID), OL_D_ID, OL_O_ID, OL_I_ID, OL_NUMBER)
-);
-
