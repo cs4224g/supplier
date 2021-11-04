@@ -48,7 +48,7 @@ def execute_t1(session, args_arr):
     # will differ slightly for the 2 orders, but there don't seem to be any queries sensitive to 
     # that timestamp, so leaving it as un-batched.
     session.execute(
-        """INSERT INTO orders (
+                """INSERT INTO order_status (
                             o_w_id,
                             o_d_id,
                             o_carrier_id,
@@ -284,11 +284,7 @@ def execute_t1(session, args_arr):
   
     # print('bef', total_amount)
     d_tax = district.d_tax
-    warehouses = session.execute(f"""SELECT * FROM warehouse WHERE w_id={w_id}""")
-    if not warehouses:
-        return 1
-    warehouse = warehouses[0]
-    w_tax = warehouse.w_tax
+    w_tax = district.d_w_tax
     total_amount *= (1 + d_tax + w_tax) * (1 - customer.c_discount)
     # print(d_tax)
     # print(w_tax)
