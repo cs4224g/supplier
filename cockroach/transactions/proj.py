@@ -14,14 +14,9 @@ from psycopg2.errors import SerializationFailure
 
 
 def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLIER_WAREHOUSE, QUANTITY):
-    print('================ executing new_order_transaction query ================')
+    print('\n================ executing new_order transaction ================\n')
+
     with conn.cursor() as cur:
-        # get W_TAX
-        cur.execute(
-            "SELECT W_TAX FROM proj.warehouse WHERE W_ID = %s", (
-                str(W_ID))
-        )
-        W_TAX = cur.fetchone()[0]
 
         # get N and D_TAX
         cur.execute(
@@ -47,15 +42,16 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
         # get O_ENTRY_D
         O_ENTRY_D = datetime.now()
 
-        # get C_LAST, C_CREDIT, C_DISCOUNT
+        # get C_LAST, C_CREDIT, C_DISCOUNT, W_TAX
         cur.execute(
-            "SELECT C_LAST, C_CREDIT, C_DISCOUNT FROM proj.customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
-                W_ID, D_ID, C_ID)
+            "SELECT C_LAST, C_CREDIT, C_DISCOUNT, W_TAX FROM proj.customer, proj.warehouse WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s AND W_ID = %s", (
+                W_ID, D_ID, C_ID, W_ID)
         )
-        customer_info = cur.fetchone()
-        C_LAST = customer_info[0]
-        C_CREDIT = customer_info[1]
-        C_DISCOUNT = customer_info[2]
+        info = cur.fetchone()
+        C_LAST = info[0]
+        C_CREDIT = info[1]
+        C_DISCOUNT = info[2]
+        W_TAX = info[3]
 
         # output customer identifier, lastname, credit, discount
         print(W_ID, D_ID, C_ID, C_LAST, C_CREDIT, C_DISCOUNT)
@@ -77,7 +73,7 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
         for i in range(NUM_ITEMS):
             # get ADJUSTED_QTY
             cur.execute(
-                "SELECT S_QUANTITY FROM proj.stock WHERE S_W_ID = %s AND S_I_ID = %s", (
+                "SELECT S_QUANTITY FROM proj.stock WHERE S_W_ID = %s AND S_I_ID = %s ", (
                     SUPPLIER_WAREHOUSE[i], ITEM_NUMBER[i])
             )
             S_QUANTITY = cur.fetchone()[0]
@@ -117,13 +113,30 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
         TOTAL_AMOUNT *= (1 * D_TAX * W_TAX) * (1 - C_DISCOUNT)
 
     conn.commit()
-    print('new order transaction committed')
+    print("new order transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
-    print('================ executing payment_transaction query ================')
+    print('\n================ executing payment transaction ================\n')
     with conn.cursor() as cur:
+        # customer identifier, name, address, etc
+        cur.execute(
+            "SELECT C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP, C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_BALANCE FROM proj.customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
+                C_W_ID, C_D_ID, C_ID)
+        )
+        customer_info = list(cur.fetchone())
+        print(customer_info)
+        customer_info[16] = float(customer_info[16]) - float(PAYMENT)
+        # warehouse address
+        cur.execute(
+            "SELECT W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP FROM proj.warehouse WHERE W_ID = %s", [C_W_ID])
+        warehouse_info = cur.fetchone()[0]
+        # district address
+        cur.execute(
+            "SELECT D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP FROM proj.district WHERE D_W_ID = %s AND D_ID = %s", (C_W_ID, C_D_ID))
+        district_info = cur.fetchone()[0]
+
         # update warehouse W_YTD
         cur.execute(
             "UPDATE proj.warehouse SET W_YTD = W_YTD + %s WHERE W_ID = %s", (
@@ -139,38 +152,23 @@ def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
             "UPDATE proj.customer SET C_BALANCE = C_BALANCE - %s, C_YTD_PAYMENT = C_YTD_PAYMENT + %s, C_PAYMENT_CNT = C_PAYMENT_CNT + %s WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
                 PAYMENT, PAYMENT, 1,  C_W_ID, C_D_ID, C_ID)
         )
-        # output customer identifier, name, address, etc
-        cur.execute(
-            "SELECT C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP, C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_BALANCE FROM proj.customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
-                C_W_ID, C_D_ID, C_ID)
-        )
-        customer_info = cur.fetchone()[0]
+        # output information
         print(customer_info)
-        # output warehouse address
-        cur.execute(
-            "SELECT W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP FROM proj.warehouse WHERE W_ID = %s", [C_W_ID])
-        warehouse_info = cur.fetchone()[0]
         print(warehouse_info)
-        # output district address
-        cur.execute(
-            "SELECT D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP FROM proj.district WHERE D_W_ID = %s AND D_ID = %s", (C_W_ID, C_D_ID))
-        district_info = cur.fetchone()[0]
         print(district_info)
-        # output PAYMENT
         print(PAYMENT)
-
     conn.commit()
-    print('payment transaction committed')
+    print("payment transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def delivery_transaction(conn, W_ID, CARRIER_ID):
-    print('================ executing delivery_transaction query ================')
+    print('\n================ executing delivery transaction  ================\n')
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
-            "SELECT * FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
-            str(W_ID)
+            "SELECT * FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL AND O_W_ID = %s GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID = %s AND T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
+            (str(W_ID), str(W_ID))
         )
         orders_in_districts = cur.fetchmany(10)
 
@@ -188,21 +186,17 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
             )
 
             # update customer
-            # get B
             cur.execute(
-                "SELECT OL_W_ID, OL_D_ID, OL_O_ID, SUM(OL_AMOUNT) FROM proj.order_line WHERE OL_W_ID = %s AND OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID)", (
-                    order_in_district[0], order_in_district[1], order_in_district[2])
-            )
-            balance = cur.fetchone()
-            B = balance[0]
-
-            cur.execute(
-                "UPDATE proj.customer SET C_BALANCE = C_BALANCE + %s, C_DELIVERY_CNT = C_DELIVERY_CNT + %s WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
-                    B, 1, order_in_district[0], order_in_district[1], order_in_district[3])
+                "UPDATE proj.customer \
+                SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 \
+                    FROM \
+                    (SELECT SUM(OL_AMOUNT) AS B FROM proj.order_line WHERE OL_W_ID = %s AND OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID)) AS temp \
+                    WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
+                    order_in_district[0], order_in_district[1], order_in_district[2], order_in_district[0], order_in_district[1], order_in_district[3])
             )
 
     conn.commit()
-    print('delivery transaction committed')
+    print("delivery transaction committed")
     logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
@@ -215,7 +209,7 @@ def run_transaction(conn, op, max_retries=5):
     """
     # leaving this block the transaction will commit or rollback
     # (if leaving with an exception)
-    #with conn:
+    # with conn:
     for retry in range(1, max_retries + 1):
         try:
             op(conn)
@@ -238,17 +232,16 @@ def run_transaction(conn, op, max_retries=5):
 
         except psycopg2.Error as e:
             #logging.debug("got error: %s", e)
-            #print("got error: %s", e)
             #logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
+            print(e)
             print('psycopg2 error')
-            #return 1
+            # return 1
             #raise e
 
-    #raise ValueError(
+    # raise ValueError(
      #   f"Transaction did not succeed after {max_retries} retries")
     print('Transaction did not succeed after {max_retries} retries')
     return 1
-    
 
 
 def test_retry_loop(conn):
