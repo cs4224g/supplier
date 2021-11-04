@@ -160,8 +160,8 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
-            "SELECT * FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
-            str(W_ID)
+            "SELECT * FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL AND O_W_ID = %s GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID=%s AND T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
+            str(W_ID), str(W_ID)
         )
         orders_in_districts = cur.fetchmany(10)
 
@@ -180,7 +180,7 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
 
             # update customer
             cur.execute(
-                "UPDATE proj.customer SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 FROM (SELECT SUM(OL_AMOUNT) AS B FROM proj.order_line WHERE OL_W_ID = %s, OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID) AS temp) WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
+                "UPDATE proj.customer SET C_BALANCE = C_BALANCE + temp.B, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 FROM (SELECT SUM(OL_AMOUNT) AS B FROM proj.order_line WHERE OL_W_ID = %s, OL_D_ID = %s AND OL_O_ID = %s GROUP BY (OL_W_ID, OL_D_ID, OL_O_ID)) AS temp WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s", (
                     order_in_district[0], order_in_district[1], order_in_district[2], order_in_district[0], order_in_district[1], order_in_district[3])
             )
 
