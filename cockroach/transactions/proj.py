@@ -153,7 +153,7 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
-            "SELECT * FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL AND O_W_ID = %s GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID=%s AND T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
+            "SELECT O_W_ID, O_D_ID, O_ID, O_C_ID FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL AND O_W_ID=%s GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID=%s AND T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
             str(W_ID), str(W_ID)
         )
         orders_in_districts = cur.fetchmany(10)
