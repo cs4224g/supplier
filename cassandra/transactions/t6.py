@@ -11,7 +11,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     query_next_order_id = session.execute(SimpleStatement(
         f'SELECT D_NEXT_O_ID \
         FROM wholesale_supplier.district \
@@ -40,6 +39,7 @@ def perform_transaction(session):
     print(order_count)
 
     items = {}
+    items_quantity = {}
     popular_items = {}
  
     for order_id in order_ids:
@@ -57,11 +57,16 @@ def perform_transaction(session):
             AND OL_O_ID = {order_id} AND OL_QUANTITY = {max_quantity}'))
         if not query_popular_item:
             return 1
-        item = query_popular_item[0]
-        items[item.ol_i_id] = item.ol_i_name
-        popular_items[item.ol_i_id] = 0
+        # there may be multiple popular items in an order
+        query_items = query_popular_item
+        for query_item in query_items:
+            items[query_item.ol_i_id] = query_item.ol_i_name
+            items_quantity[query_item.ol_i_id] = query_item.ol_quantity
+            popular_items[query_item.ol_i_id] = 0
+
     
     for item_id in items:
+        print(items[item_id], items_quantity[item_id])
         query_popular_items = session.execute(SimpleStatement(
             f'SELECT COUNT(OL_O_ID) \
             FROM wholesale_supplier.order_line_by_item WHERE  OL_I_ID = {item_id} \
@@ -77,6 +82,8 @@ def perform_transaction(session):
         item_name = items[item_id]
         percentage_of_orders_with_popular_items = (item_count/order_count) * 100
         print(item_name, percentage_of_orders_with_popular_items)
+
+    return 0
     
 def execute_t6(session_input, user_input):
     print("T6 program was called!")

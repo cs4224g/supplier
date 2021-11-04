@@ -20,8 +20,8 @@ from stats import get_stats
 
 def main():
 
-    #conn = psycopg2.connect("postgresql://root@192.168.51.3:26357?sslmode=disable")
-    conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
+    conn = psycopg2.connect("postgresql://root@192.168.51.3:26357?sslmode=disable")
+    #conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
     max_retries = 3
     no_transact = 0
     total_time = 0

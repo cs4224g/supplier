@@ -14,7 +14,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     query_next_avail_order = session.execute(SimpleStatement(
         f'SELECT D_NEXT_O_ID \
         FROM wholesale_supplier.district \
@@ -36,7 +35,6 @@ def perform_transaction(session):
     retrieved_item_ids = set()
     for row in query_last_orders:
         retrieved_item_ids.add(row.ol_i_id)
-    print(len(retrieved_item_ids))
     
     query_items_stock_below_threshold = session.execute(SimpleStatement(
         f'SELECT COUNT(*)\
@@ -48,6 +46,7 @@ def perform_transaction(session):
         return 1
     items_count = query_items_stock_below_threshold
     print(f'{items_count[0].count}')
+    return 0
 
 def execute_t5(session_input, user_input):
     print("T5 program was called!")

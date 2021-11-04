@@ -11,7 +11,6 @@ def process_input(user_input):
 
 
 def perform_transaction(session):
-    session.row_factory = named_tuple_factory
     query_cust = session.execute(SimpleStatement(
         f'SELECT C_FIRST, C_MIDDLE, C_LAST, C_BALANCE \
         FROM wholesale_supplier.customer \
@@ -43,6 +42,8 @@ def perform_transaction(session):
             print(orderline.ol_i_id, orderline.ol_supply_w_id, orderline.ol_quantity, orderline.ol_amount, orderline.ol_delivery_d)
     else:
         return 1
+
+    return 0
 
 def execute_t4(session_input, user_input):
     print("T4 program was called!")
