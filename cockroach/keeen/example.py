@@ -13,63 +13,6 @@ import psycopg2
 from psycopg2.errors import SerializationFailure
 
 
-def create_accounts(conn):
-    with conn.cursor() as cur:
-        cur.execute(
-            "CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"
-        )
-        cur.execute(
-            "UPSERT INTO accounts (id, balance) VALUES (1, 1000), (2, 250)")
-        logging.debug("create_accounts(): status message: %s",
-                      cur.statusmessage)
-    conn.commit()
-
-
-def delete_accounts(conn):
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM bank.accounts")
-        logging.debug("delete_accounts(): status message: %s",
-                      cur.statusmessage)
-    conn.commit()
-
-
-def print_balances(conn):
-    with conn.cursor() as cur:
-        cur.execute("SELECT id, balance FROM accounts")
-        logging.debug("print_balances(): status message: %s",
-                      cur.statusmessage)
-        rows = cur.fetchall()
-        conn.commit()
-        print(f"Balances at {time.asctime()}:")
-        for row in rows:
-            print(row)
-
-
-def transfer_funds(conn, frm, to, amount):
-    with conn.cursor() as cur:
-
-        # Check the current balance.
-        cur.execute("SELECT balance FROM accounts WHERE id = %s", (frm,))
-        from_balance = cur.fetchone()[0]
-        if from_balance < amount:
-            raise RuntimeError(
-                f"Insufficient funds in {frm}: have {from_balance}, need {amount}"
-            )
-
-        # Perform the transfer.
-        cur.execute(
-            "UPDATE accounts SET balance = balance - %s WHERE id = %s", (
-                amount, frm)
-        )
-        cur.execute(
-            "UPDATE accounts SET balance = balance + %s WHERE id = %s", (
-                amount, to)
-        )
-
-    conn.commit()
-    logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
-
-
 def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLIER_WAREHOUSE, QUANTITY):
     with conn.cursor() as cur:
         # get W_TAX
@@ -369,21 +312,14 @@ def main():
     logging.basicConfig(level=logging.DEBUG if opt.verbose else logging.INFO)
 
     conn = psycopg2.connect(opt.dsn)
-    # create_accounts(conn)
-    # print_balances(conn)
-
-    amount = 100
-    fromId = 1
-    toId = 2
 
     try:
-
-        # run_transaction(conn, lambda conn: payment_transaction(
-        #     conn, 1, 1, 1, 10))
+        # run_transaction(conn, lambda conn: new_order_transaction(
+        #     conn, 1, 1, 1, 1, [1], [1], [1]))
+        run_transaction(conn, lambda conn: payment_transaction(
+            conn, 1, 1, 1, 10))
         # run_transaction(conn, lambda conn: delivery_transaction(
         #     conn, 1, 2))
-        run_transaction(conn, lambda conn: new_order_transaction(
-            conn, 1, 1, 1, 1, [1], [1], [1]))
 
     # The function below is used to test the transaction retry logic.  It
     # can be deleted from production code.
@@ -394,10 +330,6 @@ def main():
         # and any others thrown by the database interaction.
         logging.debug("run_transaction(conn, op) failed: %s", ve)
         pass
-
-    # print_balances(conn)
-
-    # delete_accounts(conn)
 
     # Close communication with the database.
     conn.close()
