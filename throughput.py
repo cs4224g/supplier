@@ -6,7 +6,7 @@ with open('client.csv') as stats:
     throughput_list = []
     for row in csv_reader:
         throughput_list.append(float(row[3]))
-    throughput_stats = [max(throughput_list), min(throughput_list), statistics.mean(throughput_list)]
+    throughput_stats = [min(throughput_list), max(throughput_list), statistics.mean(throughput_list)]
 
 with open('throughput.csv', 'w+') as throughput:
     csv_writer = csv.writer(throughput, delimiter=",")

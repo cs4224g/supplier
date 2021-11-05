@@ -32,7 +32,7 @@ if __name__ == '__main__':
         'select sum(W_YTD) from warehouse;',
         'select sum(D_YTD), sum(D_NEXT_O_ID) from district;',
         'select sum(C_BALANCE), sum(C_YTD_PAYMENT), sum(C_PAYMENT_CNT), sum(C_DELIVERY_CNT) from customer;',
-        'select max(O_ID), sum(O_OL_CNT) from orders;',
+        'select max(O_ID), sum(O_OL_CNT) from order_status;',
         'select sum(OL_AMOUNT), sum(OL_QUANTITY) from order_line;',
         'select sum(S_QUANTITY), sum(S_YTD), sum(S_ORDER_CNT), sum(S_REMOTE_CNT) from stock;',
     ]

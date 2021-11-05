@@ -4,7 +4,6 @@ Test psycopg with CockroachDB.
 """
 
 import time
-import random
 import logging
 from datetime import datetime
 from argparse import ArgumentParser, RawTextHelpFormatter
@@ -107,8 +106,8 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
             )
 
             # output each ordered item information
-            output_items.append(ITEM_NUMBER[i], I_NAME, SUPPLIER_WAREHOUSE[i],
-                                QUANTITY[i], ITEM_AMOUNT, S_QUANTITY)
+            output_items.append([ITEM_NUMBER[i], I_NAME, SUPPLIER_WAREHOUSE[i],
+                                QUANTITY[i], ITEM_AMOUNT, S_QUANTITY])
 
         # increment total amount
         TOTAL_AMOUNT *= (1 * D_TAX * W_TAX) * (1 - C_DISCOUNT)
@@ -158,7 +157,7 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
             "SELECT O_W_ID, O_D_ID, O_ID, O_C_ID FROM proj.orders AS T1 WHERE EXISTS (SELECT * FROM (SELECT O_W_ID, O_D_ID, MIN(O_ID) AS O_ID FROM proj.orders WHERE O_CARRIER_ID IS NULL AND O_W_ID=%s GROUP BY O_W_ID, O_D_ID) AS T2 WHERE T1.O_W_ID=%s AND T1.O_W_ID=T2.O_W_ID AND T1.O_D_ID=T2.O_D_ID AND T1.O_ID=T2.O_ID )",
-            str(W_ID), str(W_ID)
+            (str(W_ID), str(W_ID))
         )
         orders_in_districts = cur.fetchmany(10)
 
@@ -210,21 +209,14 @@ def run_transaction(conn, op, max_retries=5):
             # This is a retry error, so we roll back the current
             # transaction and sleep for a bit before retrying. The
             # sleep time increases for each failed transaction.
-            #logging.debug("got error: %s", e)
             conn.rollback()
-            #logging.debug("EXECUTE SERIALIZATION_FAILURE BRANCH")
-            #sleep_ms = (2 ** retry) * 0.1 * (random.random() + 0.5)
             sleep_ms = 0.1
-            #logging.debug("Sleeping %s seconds", sleep_ms)
             time.sleep(sleep_ms)
 
         except psycopg2.Error as e:
-            #logging.debug("got error: %s", e)
-            #logging.debug("EXECUTE NON-SERIALIZATION_FAILURE BRANCH")
             print(e)
             print('psycopg2 error')
-            # return 1
-            #raise e
+            return 1
 
     # raise ValueError(
      #   f"Transaction did not succeed after {max_retries} retries")

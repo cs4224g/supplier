@@ -17,6 +17,12 @@ def perform_transaction(session):
         WHERE D_W_ID = {w_id} AND D_ID = {d_id}'))
     if not query_next_order_id:
         return 1
+
+    # output 1
+    print(w_id, d_id)
+    # output 2
+    print(no_last_orders)
+
     max_order_id = query_next_order_id[0].d_next_o_id
     min_order_id = max_order_id - int(no_last_orders)
 
@@ -31,7 +37,9 @@ def perform_transaction(session):
     order_ids = set()
 
     for last_order in query_last_orders:
+        # output 3a
         print(last_order.ol_o_id, last_order.ol_o_entry_d)
+        # output 3b
         print(last_order.ol_c_first, last_order.ol_c_middle, last_order.ol_c_last)
         order_ids.add(last_order.ol_o_id)
     
@@ -66,6 +74,7 @@ def perform_transaction(session):
 
     
     for item_id in items:
+        # output 3c
         print(items[item_id], items_quantity[item_id])
         query_popular_items = session.execute(SimpleStatement(
             f'SELECT COUNT(OL_O_ID) \
@@ -81,6 +90,7 @@ def perform_transaction(session):
         item_count = popular_items[item_id]
         item_name = items[item_id]
         percentage_of_orders_with_popular_items = (item_count/order_count) * 100
+        # output 4a
         print(item_name, percentage_of_orders_with_popular_items)
 
     return 0

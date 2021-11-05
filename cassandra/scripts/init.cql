@@ -64,22 +64,6 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.customer (
 	PRIMARY KEY((C_W_ID), C_D_ID, C_ID, C_BALANCE)
 ) WITH CLUSTERING ORDER BY (C_D_ID ASC, C_ID ASC, C_BALANCE DESC);
 
-CREATE TABLE IF NOT EXISTS wholesale_supplier.orders (
-	O_W_ID INT,
-	O_D_ID INT,
-	O_ID INT,
-	O_C_ID INT,
-	O_CARRIER_ID INT,
-	O_OL_CNT DECIMAL,
-	O_ALL_LOCAL DECIMAL,
-	O_ENTRY_D TIMESTAMP,
-    -- Extra
-	O_C_FIRST VARCHAR,
-	O_C_MIDDLE VARCHAR,
-	O_C_LAST VARCHAR,
-	PRIMARY KEY ((O_W_ID), O_D_ID, O_ID, O_C_ID)
-) WITH CLUSTERING ORDER BY (O_D_ID ASC, O_ID DESC); 
-
 CREATE TABLE IF NOT EXISTS wholesale_supplier.order_by_carrier_id (
 	O_W_ID INT,
 	O_D_ID INT,
@@ -206,16 +190,3 @@ CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_item (
 	OL_C_ID INT, 
 	PRIMARY KEY ((OL_I_ID), OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)
 );
-
--- For T8
-CREATE TABLE IF NOT EXISTS wholesale_supplier.order_line_by_order (
-	OL_W_ID INT,
-	OL_D_ID INT,
-	OL_O_ID INT,
-	OL_NUMBER INT,
-	OL_I_ID INT,
-    -- extra
-	OL_C_ID INT,
-	PRIMARY KEY ((OL_W_ID), OL_D_ID, OL_O_ID, OL_I_ID, OL_NUMBER)
-);
-
