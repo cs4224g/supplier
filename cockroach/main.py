@@ -15,8 +15,8 @@ from transactions.related_customer import execute_t8
 
 def main():
 
-    #conn = psycopg2.connect( "postgresql://root@192.168.51.3:26357?sslmode=disable")
-    conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
+    conn = psycopg2.connect( "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    #conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
 
     no_transact = 0
     total_time = 0
