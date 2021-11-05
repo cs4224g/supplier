@@ -155,7 +155,7 @@ def run_init(conn):
         conn.commit()
 
 
-def run_import(conn):
+def run_import(conn, hostnumber):
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
@@ -169,7 +169,7 @@ def run_import(conn):
                 W_ZIP,\
                 W_TAX,\
                 W_YTD\
-            ) CSV DATA ('http://localhost:3000/warehouse.csv');\
+            ) CSV DATA ('http://localhost:%s/warehouse.csv');\
             IMPORT INTO proj.district (\
                 D_W_ID,\
                 D_ID,\
@@ -182,7 +182,7 @@ def run_import(conn):
                 D_TAX,\
                 D_YTD,\
                 D_NEXT_O_ID\
-            ) CSV DATA ('http://localhost:3000/district.csv');\
+            ) CSV DATA ('http://localhost:%s/district.csv');\
             IMPORT INTO proj.customer(\
                 C_W_ID,\
                 C_D_ID,\
@@ -205,7 +205,7 @@ def run_import(conn):
                 C_PAYMENT_CNT,\
                 C_DELIVERY_CNT,\
                 C_DATA\
-            ) CSV DATA ('http://localhost:3000/customer.csv') WITH nullif = 'null';\
+            ) CSV DATA ('http://localhost:%s/customer.csv') WITH nullif = 'null';\
             IMPORT INTO proj.orders(\
                 O_W_ID,\
                 O_D_ID,\
@@ -215,14 +215,14 @@ def run_import(conn):
                 O_OL_CNT,\
                 O_ALL_LOCAL,\
                 O_ENTRY_D\
-            ) CSV DATA ('http://localhost:3000/order.csv') WITH nullif = 'null';\
+            ) CSV DATA ('http://localhost:%s/order.csv') WITH nullif = 'null';\
             IMPORT INTO proj.item(\
                 I_ID,\
                 I_NAME,\
                 I_PRICE,\
                 I_IM_ID,\
                 I_DATA\
-            ) CSV DATA ('http://localhost:3000/item.csv');\
+            ) CSV DATA ('http://localhost:%s/item.csv');\
             IMPORT INTO proj.order_line(\
                 OL_W_ID,\
                 OL_D_ID,\
@@ -234,7 +234,7 @@ def run_import(conn):
                 OL_SUPPLY_W_ID,\
                 OL_QUANTITY,\
                 OL_DIST_INFO\
-            ) CSV DATA ('http://localhost:3000/order-line.csv') WITH nullif = 'null';\
+            ) CSV DATA ('http://localhost:%s/order-line.csv') WITH nullif = 'null';\
             IMPORT INTO proj.stock(\
                 S_W_ID,\
                 S_I_ID,\
@@ -253,7 +253,8 @@ def run_import(conn):
                 S_DIST_09,\
                 S_DIST_10,\
                 S_DATA\
-            ) CSV DATA ('http://localhost:3000/stock.csv');"
+            ) CSV DATA ('http://localhost:%s/stock.csv');", (
+                hostnumber, hostnumber, hostnumber, hostnumber, hostnumber, hostnumber, hostnumber)
         )
         conn.commit()
 
@@ -274,15 +275,17 @@ def test_retry_loop(conn):
 
 
 def main():
-
-    conn = psycopg2.connect(
-        "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    dsn = sys.argv[0]
+    hostnumber = sys.argv[1]
+    # conn = psycopg2.connect(
+    #     "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    conn = psycopg2.connect("postgresql://root@{dsn}?sslmode=disable")
     try:
 
         # run_transaction(conn, lambda conn: payment_transaction(
         #     conn, 1, 1, 1, 10))
         run_init(conn)
-        run_import(conn)
+        run_import(conn, hostnumber)
 
     # The function below is used to test the transaction retry logic.  It
     # can be deleted from production code.
