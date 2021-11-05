@@ -155,6 +155,7 @@ def run_init(conn):
         conn.commit()
 
 
+
 def run_import(conn, hostnumber):
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
@@ -275,8 +276,9 @@ def test_retry_loop(conn):
 
 
 def main():
-    dsn = sys.argv[0]
-    hostnumber = sys.argv[1]
+    opt = parsecmdline()
+    dsn = opt.dsn
+    hostnumber = opt.hostnumber
     # conn = psycopg2.connect(
     #     "postgresql://root@192.168.51.3:26357?sslmode=disable")
     conn = psycopg2.connect("postgresql://root@{dsn}?sslmode=disable")
@@ -308,26 +310,17 @@ def main():
 def parse_cmdline():
     parser = ArgumentParser(description=__doc__,
                             formatter_class=RawTextHelpFormatter)
+
     parser.add_argument(
         "dsn",
         help="""\
             database connection string
-
-            For cockroach demo, use
-            'postgresql://<username>:<password>@<hostname>:<port>/bank?sslmode=require',
-            with the username and password created in the demo cluster, and the hostname
-            and port listed in the (sql/tcp) connection parameters of the demo cluster
-            welcome message.
-
-            For CockroachCloud Free, use
-            'postgres://<username>:<password>@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/<cluster-name>.bank?sslmode=verify-full&sslrootcert=<your_certs_directory>/cc-ca.crt'.
-
-            If you are using the connection string copied from the Console, your username,
-            password, and cluster name will be pre-populated. Replace
-            <your_certs_directory> with the path to the 'cc-ca.crt' downloaded from the
-            Console.
-
             """
+    )
+    
+    parser.add_argument(
+      "hostnumber",
+      help="host port number for python http server"
     )
 
     parser.add_argument("-v", "--verbose",
