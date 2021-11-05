@@ -141,3 +141,4 @@ cassandra/data_files/
 # data files
 *.csv
 .vscode/launch.json
+cassandra/sync.sh

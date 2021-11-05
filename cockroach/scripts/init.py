@@ -155,7 +155,8 @@ def run_init(conn):
         conn.commit()
 
 
-def run_import(conn):
+
+def run_import(conn, hostnumber):
     with conn.cursor() as cur:
         # get districts' min order numbers and districts' min order numbers' customers
         cur.execute(
@@ -169,7 +170,7 @@ def run_import(conn):
                 W_ZIP,\
                 W_TAX,\
                 W_YTD\
-            ) CSV DATA ('http://localhost:3000/warehouse.csv');\
+            ) CSV DATA ('http://localhost:%s/warehouse.csv');\
             IMPORT INTO proj.district (\
                 D_W_ID,\
                 D_ID,\
@@ -182,7 +183,7 @@ def run_import(conn):
                 D_TAX,\
                 D_YTD,\
                 D_NEXT_O_ID\
-            ) CSV DATA ('http://localhost:3000/district.csv');\
+            ) CSV DATA ('http://localhost:%s/district.csv');\
             IMPORT INTO proj.customer(\
                 C_W_ID,\
                 C_D_ID,\
@@ -205,7 +206,7 @@ def run_import(conn):
                 C_PAYMENT_CNT,\
                 C_DELIVERY_CNT,\
                 C_DATA\
-            ) CSV DATA ('http://localhost:3000/customer.csv') WITH nullif = 'null';\
+            ) CSV DATA ('http://localhost:%s/customer.csv') WITH nullif = 'null';\
             IMPORT INTO proj.orders(\
                 O_W_ID,\
                 O_D_ID,\
@@ -215,14 +216,14 @@ def run_import(conn):
                 O_OL_CNT,\
                 O_ALL_LOCAL,\
                 O_ENTRY_D\
-            ) CSV DATA ('http://localhost:3000/order.csv') WITH nullif = 'null';\
+            ) CSV DATA ('http://localhost:%s/order.csv') WITH nullif = 'null';\
             IMPORT INTO proj.item(\
                 I_ID,\
                 I_NAME,\
                 I_PRICE,\
                 I_IM_ID,\
                 I_DATA\
-            ) CSV DATA ('http://localhost:3000/item.csv');\
+            ) CSV DATA ('http://localhost:%s/item.csv');\
             IMPORT INTO proj.order_line(\
                 OL_W_ID,\
                 OL_D_ID,\
@@ -234,7 +235,7 @@ def run_import(conn):
                 OL_SUPPLY_W_ID,\
                 OL_QUANTITY,\
                 OL_DIST_INFO\
-            ) CSV DATA ('http://localhost:3000/order-line.csv') WITH nullif = 'null';\
+            ) CSV DATA ('http://localhost:%s/order-line.csv') WITH nullif = 'null';\
             IMPORT INTO proj.stock(\
                 S_W_ID,\
                 S_I_ID,\
@@ -253,7 +254,8 @@ def run_import(conn):
                 S_DIST_09,\
                 S_DIST_10,\
                 S_DATA\
-            ) CSV DATA ('http://localhost:3000/stock.csv');"
+            ) CSV DATA ('http://localhost:%s/stock.csv');", (
+                hostnumber, hostnumber, hostnumber, hostnumber, hostnumber, hostnumber, hostnumber)
         )
         conn.commit()
 
@@ -274,15 +276,18 @@ def test_retry_loop(conn):
 
 
 def main():
-
-    conn = psycopg2.connect(
-        "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    opt = parsecmdline()
+    dsn = opt.dsn
+    hostnumber = opt.hostnumber
+    # conn = psycopg2.connect(
+    #     "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    conn = psycopg2.connect("postgresql://root@{dsn}?sslmode=disable")
     try:
 
         # run_transaction(conn, lambda conn: payment_transaction(
         #     conn, 1, 1, 1, 10))
         run_init(conn)
-        run_import(conn)
+        run_import(conn, hostnumber)
 
     # The function below is used to test the transaction retry logic.  It
     # can be deleted from production code.
@@ -305,26 +310,17 @@ def main():
 def parse_cmdline():
     parser = ArgumentParser(description=__doc__,
                             formatter_class=RawTextHelpFormatter)
+
     parser.add_argument(
         "dsn",
         help="""\
             database connection string
-
-            For cockroach demo, use
-            'postgresql://<username>:<password>@<hostname>:<port>/bank?sslmode=require',
-            with the username and password created in the demo cluster, and the hostname
-            and port listed in the (sql/tcp) connection parameters of the demo cluster
-            welcome message.
-
-            For CockroachCloud Free, use
-            'postgres://<username>:<password>@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/<cluster-name>.bank?sslmode=verify-full&sslrootcert=<your_certs_directory>/cc-ca.crt'.
-
-            If you are using the connection string copied from the Console, your username,
-            password, and cluster name will be pre-populated. Replace
-            <your_certs_directory> with the path to the 'cc-ca.crt' downloaded from the
-            Console.
-
             """
+    )
+    
+    parser.add_argument(
+      "hostnumber",
+      help="host port number for python http server"
     )
 
     parser.add_argument("-v", "--verbose",

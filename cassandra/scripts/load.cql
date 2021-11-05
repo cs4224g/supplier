@@ -1,7 +1,6 @@
 COPY wholesale_supplier.warehouse FROM 'warehouse_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.district FROM 'district_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.customer FROM 'customer_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
-COPY wholesale_supplier.orders FROM 'order_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.order_by_carrier_id FROM 'order_by_carrier_id_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.item FROM 'item_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
 COPY wholesale_supplier.order_line FROM 'order_line_cass.csv' WITH DELIMITER=',' AND HEADER=TRUE;
