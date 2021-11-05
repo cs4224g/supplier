@@ -118,7 +118,6 @@ def new_order_transaction(conn, W_ID, D_ID, C_ID, NUM_ITEMS, ITEM_NUMBER, SUPPLI
 
     conn.commit()
     print("new order transaction committed")
-    logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
@@ -150,7 +149,6 @@ def payment_transaction(conn, C_W_ID, C_D_ID, C_ID, PAYMENT):
         print(PAYMENT)
     conn.commit()
     print("payment transaction committed")
-    logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def delivery_transaction(conn, W_ID, CARRIER_ID):
@@ -187,7 +185,6 @@ def delivery_transaction(conn, W_ID, CARRIER_ID):
             )
         conn.commit()
     print("delivery transaction committed")
-    logging.debug("transfer_funds(): status message: %s", cur.statusmessage)
 
 
 def run_transaction(conn, op, max_retries=5):
