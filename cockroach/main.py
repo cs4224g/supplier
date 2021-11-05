@@ -1,11 +1,7 @@
 import sys
 import time
-import logging
-import random
 import psycopg2
 import numpy as np
-from psycopg2.errors import SerializationFailure
-from argparse import ArgumentParser, RawTextHelpFormatter
 
 from transactions.proj import new_order_transaction
 from transactions.proj import payment_transaction
@@ -16,15 +12,12 @@ from transactions.stock_level import execute_t5
 from transactions.popular_item import execute_t6
 from transactions.top_balance import execute_t7
 from transactions.related_customer import execute_t8
-from stats import get_stats
-
 
 def main():
 
-    conn = psycopg2.connect(
-        "postgresql://root@192.168.51.3:26357?sslmode=disable")
-    #conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
-    max_retries = 3
+    #conn = psycopg2.connect( "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
+
     no_transact = 0
     total_time = 0
     failed_n = 0
@@ -49,7 +42,7 @@ def main():
     # execute transactions
     with conn:
         for line in sys.stdin:
-            print('Current Transaction = ' + str(no_transact))
+            print('\nCurrent Transaction = ' + str(no_transact))
             instruct = line.strip().split(',')
             transact = line[0]
             start_time = time.time()
@@ -167,42 +160,6 @@ def main():
         transaction_throughput), str(avg_transac_latency), str(med), str(p95), str(p99)]
     m_str = ",".join(measurements)
     print(m_str, file=sys.stderr)
-
-    # 15 query stats
-    # get_stats(connection)
-
-
-def parse_cmdline():
-    parser = ArgumentParser(description=__doc__,
-                            formatter_class=RawTextHelpFormatter)
-    parser.add_argument(
-        "dsn",
-        help="""\
-            database connection string
-
-            For cockroach demo, use
-            'postgresql://<username>:<password>@<hostname>:<port>/bank?sslmode=require',
-            with the username and password created in the demo cluster, and the hostname
-            and port listed in the (sql/tcp) connection parameters of the demo cluster
-            welcome message.
-
-            For CockroachCloud Free, use
-            'postgres://<username>:<password>@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/<cluster-name>.bank?sslmode=verify-full&sslrootcert=<your_certs_directory>/cc-ca.crt'.
-
-            If you are using the connection string copied from the Console, your username,
-            password, and cluster name will be pre-populated. Replace
-            <your_certs_directory> with the path to the 'cc-ca.crt' downloaded from the
-            Console.
-
-            """
-    )
-
-    parser.add_argument("-v", "--verbose",
-                        action="store_true", help="print debug info")
-
-    opt = parser.parse_args()
-    return opt
-
 
 if __name__ == "__main__":
     main()

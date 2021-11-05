@@ -1,10 +1,8 @@
 #transaction 8
 
-
 def execute_t8(connection, c_w_id, c_d_id, c_id):
-    print('\n================ executing related_customer query ================\n')
-
-    #print("Customer identifier: ")
+    print('\n================ related customer ================\n')
+ 
     print(c_w_id, c_d_id, c_id)
 
     results = ''
