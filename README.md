@@ -73,7 +73,10 @@ cockroach init --insecure --host=192.168.51.3:26357
 
 ### Importing data into CockroachDB
 
-* To initialise the tables and database, ```cd scripts``` to get to the correct folder and run:
+* To initialise the tables and database, ```cd scripts``` to get to the correct folder.
+* Set up python HTTP server on another window from the directory with the data files using:
+
+* On the xcnd machine run:
 ```
 cockroach sql --insecure --host=192.168.51.3:26357 --file ./init.sql
 ```
@@ -87,7 +90,6 @@ and run:
 cockroach sql --insecure --host=192.168.51.3:26357 --file ./import_data.sql
 ```
 
-* Note that port number needs to be kept at 9001 as the port number is hardcoded into import_data.sql
 
 ### Running transactions
 * To run a client transaction, use the following command:
