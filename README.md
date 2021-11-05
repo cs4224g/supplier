@@ -3,7 +3,7 @@ A Wholesale Supplier application powered by Apache Cassandra and CockroachDB
 
 ## Getting Started
 
-### Cassandra 4.0.1 Installation
+## Cassandra 4.0.1 Installation
 
 * Follow this [guide](https://www.youtube.com/watch?v=-1waKtjNt88)
 * Add the bin directory to your PATH:
@@ -39,7 +39,7 @@ Running `cqlsh` would start the console to interact with the server
 ## CockroachDB Usage and Installation
 
 ### Set up cockroachDB cluster
-To set up cockroachDB node cluster on xcnd40...xcnd44 run the respective commands on each machine:
+* To set up cockroachDB node cluster on xcnd40...xcnd44 run the respective commands on each machine:
 
 xcnd40:
 ```
@@ -66,7 +66,7 @@ xcnd44:
 cockroach start --insecure --store=node5 --listen-addr=192.168.51.7:26357 --join=192.168.51.3:26357,192.168.51.4:26357,192.168.51.5:26357,192.168.51.6:26357,192.168.51.7:26357 --cache=.25 --max-sql-memory=.25 --http-addr=192.168.51.7:9000
 ```
 
-Initialise the cluster by running:
+* Initialise the cluster by running:
 ```
 cockroach init --insecure --host=192.168.51.3:26357
 ```
@@ -75,11 +75,11 @@ Make sure the host IP address follows the one shown above as the DSN is hard cod
 
 ### Importing data into CockroachDB
 
-To initialise the tables and database, ```cd scripts``` to get to the correct folder and run:
+* To initialise the tables and database, ```cd scripts``` to get to the correct folder and run:
 ```
 cockroach sql --insecure --host=192.168.51.3:26357 --file ./init.sql
 ```
-To import data, set up a python HTTP server on another window from the directory with the data files using:
+* To import data, set up a python HTTP server on another window from the directory with the data files using:
 ```
 python -m SimpleHTTPServer 9001
 ```
@@ -89,18 +89,32 @@ and run:
 cockroach sql --insecure --host=192.168.51.3:26357 --file ./import_data.sql
 ```
 
-Note that port number needs to be kept at 9001 as the port number is hardcoded into import_data.sql
+* Note that port number needs to be kept at 9001 as the port number is hardcoded into import_data.sql
 
 ### Running transactions
-To run a client transaction, use the following command:
+* To run a client transaction, use the following command:
 ```
 python3 main.py < {client}.csv 
 ```
-Note that throughput metrics are printed to stderr.
+* Note that throughput metrics are printed to stderr.
 
-To retrieve the 15 statistics for dbstate, run:
+* To retrieve the 15 statistics for dbstate, run:
 ```
 python3 stats.py 
+```
+
+
+## Drivers
+
+* Cassandra Python Driver: [link](https://github.com/datastax/python-driver)
+```
+pip install --upgrade pip --user
+pip install cassandra-driver
+python -c 'import cassandra; print(cassandra.__version__)'
+```
+* CockroachDB Python Driver
+```
+pip install psycopg2
 ```
 
 
