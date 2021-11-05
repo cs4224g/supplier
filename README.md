@@ -1,6 +1,6 @@
 # supplier
-A Wholesale Supplier application powered by Apache Cassandra and CockroachDB
 
+A Wholesale Supplier application powered by Apache Cassandra and CockroachDB
 
 ## Running the experiments
 
@@ -23,7 +23,8 @@ Please follow the instructions [here](/cassandra/installation.md).
 
 1. Have Java 8 installed and configured on the cluster. You may find it [here](https://www.oracle.com/sg/java/technologies/javase/javase8-archive-downloads.html#license-lightbox). To set up Java, run the following in the terminal:
 
-```export JAVA_HOME="/{replace with directory of installation}/jdk1.8.0_202"
+```
+export JAVA_HOME="/{replace with directory of installation}/jdk1.8.0_202"
 export PATH="${JAVA_HOME}/bin:{$PATH}"
 ```
 
@@ -44,7 +45,7 @@ export PATH=/{replace with directory of installation}}/apache-cassandra-4.0.1/bi
 ```
 
 6. Modify `cassandra.yaml` accordingly to set up the seed. Follow the file [here](/cassandra/cassandra.yaml) as needed. Copy this into the `/conf` directory of the remaining nodes.
-7. After configuration, restart all Cassandra servers so that they have the changes. To kill and restart Cassandra, follow [this section](####kill-and-restart-cassandra)
+7. After configuration, restart all Cassandra servers so that they have the changes. To kill and restart Cassandra, follow [this section](#kill-and-restart-cassandra).
 8. `rm -rf data/*` from the `apache-cassandra-4.0.1` folder.
 9. To start running Cassandra in the background, run `nohup cassandra &`.
 
@@ -57,7 +58,7 @@ export PATH=/{replace with directory of installation}}/apache-cassandra-4.0.1/bi
 
 ### Populating Data into Cassandra
 
-The following instructions assume you are running this on xcnd40.
+The following instructions assume you are running this on xcnd40 in the directory that has been set up.
 
 1. `cd /temp/cs4224-group-g-cassandra` and run `cqlsh`.
 2. Run `DROP KEYSPACE WHOLESALE_SUPPLIER;` in the cqlsh terminal.
@@ -68,34 +69,41 @@ The following instructions assume you are running this on xcnd40.
 ## CockroachDB Usage and Installation
 
 ### Set up cockroachDB cluster
-* To set up cockroachDB node cluster on xcnd40...xcnd44 run the respective commands on each machine:
+
+- To set up cockroachDB node cluster on xcnd40...xcnd44 run the respective commands on each machine:
 
 xcnd40:
+
 ```
 cockroach start --insecure --store=node1 --listen-addr=192.168.51.3:26357 --join=192.168.51.3:26357,192.168.51.4:26357,192.168.51.5:26357,192.168.51.6:26357,192.168.51.7:26357 --cache=.25 --max-sql-memory=.25 --http-addr=192.168.51.3:9000
 ```
 
 xcnd41:
+
 ```
 cockroach start --insecure --store=node2 --listen-addr=192.168.51.4:26357 --join=192.168.51.3:26357,192.168.51.4:26357,192.168.51.5:26357,192.168.51.6:26357,192.168.51.7:26357 --cache=.25 --max-sql-memory=.25 --http-addr=192.168.51.4:9000
 ```
 
 xcnd42:
+
 ```
 cockroach start --insecure --store=node3 --listen-addr=192.168.51.5:26357 --join=192.168.51.3:26357,192.168.51.4:26357,192.168.51.5:26357,192.168.51.6:26357,192.168.51.7:26357 --cache=.25 --max-sql-memory=.25 --http-addr=192.168.51.5:9000
 ```
 
 xcnd43:
+
 ```
 cockroach start --insecure --store=node4 --listen-addr=192.168.51.6:26357 --join=192.168.51.3:26357,192.168.51.4:26357,192.168.51.5:26357,192.168.51.6:26357,192.168.51.7:26357 --cache=.25 --max-sql-memory=.25 --http-addr=192.168.51.6:9000
 ```
 
 xcnd44:
+
 ```
 cockroach start --insecure --store=node5 --listen-addr=192.168.51.7:26357 --join=192.168.51.3:26357,192.168.51.4:26357,192.168.51.5:26357,192.168.51.6:26357,192.168.51.7:26357 --cache=.25 --max-sql-memory=.25 --http-addr=192.168.51.7:9000
 ```
 
-* Initialise the cluster by running:
+- Initialise the cluster by running:
+
 ```
 cockroach init --insecure --host=192.168.51.3:26357
 ```
@@ -104,49 +112,58 @@ Make sure the host IP address follows the one shown above as the DSN is hard cod
 
 ### Importing data into CockroachDB
 
-* To initialise the tables and database, ```cd scripts``` to get to the correct folder and run:
+- To initialise the tables and database, `cd scripts` to get to the correct folder and run:
+
 ```
 cockroach sql --insecure --host=192.168.51.3:26357 --file ./init.sql
 ```
-* To import data, set up a python HTTP server on another window from the directory with the data files using:
+
+- To import data, set up a python HTTP server on another window from the directory with the data files using:
+
 ```
 python -m SimpleHTTPServer 9001
 ```
+
 and run:
 
 ```
 cockroach sql --insecure --host=192.168.51.3:26357 --file ./import_data.sql
 ```
 
-* Note that port number needs to be kept at 9001 as the port number is hardcoded into import_data.sql
+- Note that port number needs to be kept at 9001 as the port number is hardcoded into import_data.sql
 
 ### Running transactions
-* To run a client transaction, use the following command:
-```
-python3 main.py < {client}.csv 
-```
-* Note that throughput metrics are printed to stderr.
 
-* To retrieve the 15 statistics for dbstate, run:
+- To run a client transaction, use the following command:
+
 ```
-python3 stats.py 
+python3 main.py < {client}.csv
 ```
 
+- Note that throughput metrics are printed to stderr.
+
+- To retrieve the 15 statistics for dbstate, run:
+
+```
+python3 stats.py
+```
 
 ## Drivers
 
-* Cassandra Python Driver: [link](https://github.com/datastax/python-driver)
+- Cassandra Python Driver: [link](https://github.com/datastax/python-driver)
+
 ```
 pip install --upgrade pip --user
 pip install cassandra-driver
 python -c 'import cassandra; print(cassandra.__version__)'
 ```
-* CockroachDB Python Driver
+
+- CockroachDB Python Driver
+
 ```
 pip install psycopg2
 ```
 
-
-
 ## Other Docs
-* [Google Drive](https://drive.google.com/drive/u/0/folders/17pflcjtitASINdO3Ek_BgWZ-aIsMcDo9)
+
+- [Google Drive](https://drive.google.com/drive/u/0/folders/17pflcjtitASINdO3Ek_BgWZ-aIsMcDo9)
