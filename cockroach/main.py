@@ -2,6 +2,7 @@ import sys
 import time
 import psycopg2
 import numpy as np
+from argparse import ArgumentParser, RawTextHelpFormatter
 
 from transactions.proj import new_order_transaction
 from transactions.proj import payment_transaction
@@ -15,7 +16,10 @@ from transactions.related_customer import execute_t8
 
 def main():
 
-    conn = psycopg2.connect( "postgresql://root@192.168.51.3:26357?sslmode=disable")
+    opt = parse_cmdline()
+    file_name = opt.t_file
+
+    conn = psycopg2.connect(opt.dsn)
     #conn = psycopg2.connect("postgresql://test:test1@localhost:26257/supplier?sslmode=require")
 
     no_transact = 0
@@ -41,85 +45,85 @@ def main():
 
     # execute transactions
     with conn:
-        for line in sys.stdin:
-            print('\nCurrent Transaction = ' + str(no_transact))
-            instruct = line.strip().split(',')
-            transact = line[0]
-            start_time = time.time()
-            no_retries = 0
+        with open(file_name) as f:
+            for line in f:
+                print('\nCurrent Transaction = ' + str(no_transact))
+                instruct = line.strip().split(',')
+                transact = line[0]
+                start_time = time.time()
 
-            if transact == 'N':
-                no_items = instruct[4]
-                items = []
-                warehouse = []
-                quantity = []
-                for i in range(0, int(no_items)):
-                    next_item = sys.stdin.readline()
-                    desc = next_item.strip().split(',')
-                    items.append(int(desc[0]))
-                    warehouse.append(int(desc[1]))
-                    quantity.append(int(desc[2]))
-                failed_n += run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[2]), int(
-                    instruct[3]), int(instruct[1]), int(instruct[4]), items, warehouse, quantity))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t1_lat.append(latency)
-            elif transact == 'P':
-                failed_p += run_transaction(conn, lambda conn: payment_transaction(
-                    conn, instruct[1], instruct[2], instruct[3], instruct[4]))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t2_lat.append(latency)
-            elif transact == 'D':
-                failed_d += run_transaction(
-                    conn, lambda conn: delivery_transaction(conn, instruct[1], instruct[2]))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t3_lat.append(latency)
-            elif transact == 'O':
-                failed_o += run_transaction(conn, lambda conn: execute_t4(
-                    conn, instruct[1], instruct[2], instruct[3]))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t4_lat.append(latency)
-                #execute_t4(conn, instruct[1], instruct[2], instruct[3])
-            elif transact == 'S':
-                failed_s += run_transaction(conn, lambda conn: execute_t5(
-                    conn, instruct[1], instruct[2], instruct[3], instruct[4]))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t5_lat.append(latency)
-                #execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4])
-            elif transact == 'I':
-                failed_i += run_transaction(conn, lambda conn: execute_t6(
-                    conn, instruct[1], instruct[2], instruct[3]))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t6_lat.append(latency)
-                #execute_t6(conn, instruct[1], instruct[2], instruct[3])
-            elif transact == 'T':
-                failed_t += run_transaction(conn,
-                                            lambda conn: execute_t7(conn))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t7_lat.append(latency)
-                #conn: execute_t7(conn)
-            elif transact == 'R':
-                failed_r += run_transaction(conn, lambda conn: execute_t8(
-                    conn, instruct[1], instruct[2], instruct[3]))
-                latency = time.time() - start_time
-                latencies.append(latency)
-                total_time += latency
-                t8_lat.append(latency)
-                #execute_t8(conn, instruct[1], instruct[2], instruct[3])
-            no_transact += 1
+                if transact == 'N':
+                    no_items = instruct[4]
+                    items = []
+                    warehouse = []
+                    quantity = []
+                    for i in range(0, int(no_items)):
+                        next_item = f.readline()
+                        desc = next_item.strip().split(',')
+                        items.append(int(desc[0]))
+                        warehouse.append(int(desc[1]))
+                        quantity.append(int(desc[2]))
+                    failed_n += run_transaction(conn, lambda conn: new_order_transaction(conn, int(instruct[2]), int(
+                        instruct[3]), int(instruct[1]), int(instruct[4]), items, warehouse, quantity))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t1_lat.append(latency)
+                elif transact == 'P':
+                    failed_p += run_transaction(conn, lambda conn: payment_transaction(
+                        conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t2_lat.append(latency)
+                elif transact == 'D':
+                    failed_d += run_transaction(
+                        conn, lambda conn: delivery_transaction(conn, instruct[1], instruct[2]))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t3_lat.append(latency)
+                elif transact == 'O':
+                    failed_o += run_transaction(conn, lambda conn: execute_t4(
+                        conn, instruct[1], instruct[2], instruct[3]))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t4_lat.append(latency)
+                    #execute_t4(conn, instruct[1], instruct[2], instruct[3])
+                elif transact == 'S':
+                    failed_s += run_transaction(conn, lambda conn: execute_t5(
+                        conn, instruct[1], instruct[2], instruct[3], instruct[4]))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t5_lat.append(latency)
+                    #execute_t5(conn, instruct[1], instruct[2], instruct[3], instruct[4])
+                elif transact == 'I':
+                    failed_i += run_transaction(conn, lambda conn: execute_t6(
+                        conn, instruct[1], instruct[2], instruct[3]))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t6_lat.append(latency)
+                    #execute_t6(conn, instruct[1], instruct[2], instruct[3])
+                elif transact == 'T':
+                    failed_t += run_transaction(conn,
+                                                lambda conn: execute_t7(conn))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t7_lat.append(latency)
+                    #conn: execute_t7(conn)
+                elif transact == 'R':
+                    failed_r += run_transaction(conn, lambda conn: execute_t8(
+                        conn, instruct[1], instruct[2], instruct[3]))
+                    latency = time.time() - start_time
+                    latencies.append(latency)
+                    total_time += latency
+                    t8_lat.append(latency)
+                    #execute_t8(conn, instruct[1], instruct[2], instruct[3])
+                no_transact += 1
 
     succeeded_t = no_transact - failed_d - failed_i - failed_n - \
         failed_o - failed_p - failed_r - failed_s - failed_t
@@ -160,6 +164,32 @@ def main():
         transaction_throughput), str(avg_transac_latency), str(med), str(p95), str(p99)]
     m_str = ",".join(measurements)
     print(m_str, file=sys.stderr)
+
+
+def parse_cmdline():
+    parser = ArgumentParser(description=__doc__,
+                            formatter_class=RawTextHelpFormatter)
+
+    parser.add_argument(
+        "dsn",
+        help="""\
+            database connection string
+            """
+    )
+
+    parser.add_argument(
+        "t_file",
+        help="""\
+            Filename of transaction workload required
+            """
+    )
+
+    parser.add_argument("-v", "--verbose",
+                        action="store_true", help="print debug info")
+
+    opt = parser.parse_args()
+    return opt
+
 
 if __name__ == "__main__":
     main()

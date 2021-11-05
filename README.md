@@ -71,8 +71,6 @@ cockroach start --insecure --store=node5 --listen-addr=192.168.51.7:26357 --join
 cockroach init --insecure --host=192.168.51.3:26357
 ```
 
-Make sure the host IP address follows the one shown above as the DSN is hard coded into main.py
-
 ### Importing data into CockroachDB
 
 * To initialise the tables and database, ```cd scripts``` to get to the correct folder and run:
@@ -94,13 +92,13 @@ cockroach sql --insecure --host=192.168.51.3:26357 --file ./import_data.sql
 ### Running transactions
 * To run a client transaction, use the following command:
 ```
-python3 main.py < {client}.csv 
+python3 main.py {dsn of database} {client.txt}
 ```
 * Note that throughput metrics are printed to stderr.
 
 * To retrieve the 15 statistics for dbstate, run:
 ```
-python3 stats.py 
+python3 stats.py {dsn of database}
 ```
 
 
